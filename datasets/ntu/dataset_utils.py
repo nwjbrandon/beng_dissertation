@@ -122,7 +122,8 @@ class HandPoseDataset(Dataset):
     def __getitem__(self, idx):
         # Get Labels
         # "data/synthetic_train_val/images/l01/cam05/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam05_.0235.png" <- close to edge
-        image_name = self.image_names[idx]
+        # data/synthetic_train_val/images/l01/cam08/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam08_.0155.png
+        image_name = "data/synthetic_train_val/images/l01/cam08/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam08_.0155.png"#self.image_names[idx]
         (
             local_pose3d_gt,
             local_mesh_pts_gt,
@@ -160,10 +161,15 @@ class HandPoseDataset(Dataset):
         kpt_2d_gt = cam_projection(local_pose3d_gt, cam_proj_mat)
 
         # Preprocess
+        print(kpt_2d_gt)
         image_inp = self.image_transform(image)
-        heatmaps_gt, visibility_vector = vector_to_heatmaps(
-            kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
-        )
+        try:
+            heatmaps_gt, visibility_vector = vector_to_heatmaps(
+                kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
+            )
+        except:
+            print(image_name, drot)
+            raise
         kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] / im_width
         kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] / im_height
         kpt_2d_gt = np.array(
