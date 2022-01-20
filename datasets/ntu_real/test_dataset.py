@@ -28,7 +28,7 @@ class TestDataset:
         )
 
         Model = import_module(self.config["model"]["model_name"])
-        model = Model(self.config["model"]["n_keypoints"])
+        model = Model(self.config)
         model = model.to(self.config["test"]["device"])
         assert self.config["test"]["model_file"] != ""
         model.load_state_dict(

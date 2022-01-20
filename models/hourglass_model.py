@@ -101,36 +101,46 @@ class Merge(nn.Module):
 
 
 class Pose2dModel(nn.Module):
-    def __init__(self, oup_dim, nstack=2, inp_dim=256, bn=False, increase=0, **kwargs):
+    def __init__(self, config, bn=False, increase=0, **kwargs):
         super(Pose2dModel, self).__init__()
+        self.n_keypoints = config["model"]["n_keypoints"]
+        self.nstack = config["model"]["nstack"]
+        self.inp_dim = config["model"]["inp_dim"]
 
-        self.nstack = nstack
         self.pre = nn.Sequential(
             Conv(3, 64, 7, 2, bn=True, relu=True),
             Residual(64, 128),
             nn.MaxPool2d(2, 2),
             Residual(128, 128),
-            Residual(128, inp_dim),
+            Residual(128, self.inp_dim),
         )
 
         self.hgs = nn.ModuleList(
-            [nn.Sequential(Hourglass(4, inp_dim, bn, increase),) for i in range(nstack)]
+            [nn.Sequential(Hourglass(4, self.inp_dim, bn, increase),) for i in range(self.nstack)]
         )
 
         self.features = nn.ModuleList(
             [
                 nn.Sequential(
-                    Residual(inp_dim, inp_dim), Conv(inp_dim, inp_dim, 1, bn=True, relu=True)
+                    Residual(self.inp_dim, self.inp_dim),
+                    Conv(self.inp_dim, self.inp_dim, 1, bn=True, relu=True),
                 )
-                for i in range(nstack)
+                for i in range(self.nstack)
             ]
         )
 
         self.outs = nn.ModuleList(
-            [Conv(inp_dim, oup_dim, 1, relu=False, bn=False) for i in range(nstack)]
+            [
+                Conv(self.inp_dim, self.n_keypoints, 1, relu=False, bn=False)
+                for i in range(self.nstack)
+            ]
         )
-        self.merge_features = nn.ModuleList([Merge(inp_dim, inp_dim) for i in range(nstack - 1)])
-        self.merge_preds = nn.ModuleList([Merge(oup_dim, inp_dim) for i in range(nstack - 1)])
+        self.merge_features = nn.ModuleList(
+            [Merge(self.inp_dim, self.inp_dim) for i in range(self.nstack - 1)]
+        )
+        self.merge_preds = nn.ModuleList(
+            [Merge(self.n_keypoints, self.inp_dim) for i in range(self.nstack - 1)]
+        )
 
     def forward(self, x):
         ## our posenet

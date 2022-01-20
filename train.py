@@ -37,7 +37,7 @@ def train(config_file):
     )
 
     Model = import_module(config["model"]["model_name"])
-    model = Model(config["model"]["n_keypoints"])
+    model = Model(config)
     model = model.to(config["training_details"]["device"])
     if config["model"]["model_file"] != "":
         model.load_state_dict(
