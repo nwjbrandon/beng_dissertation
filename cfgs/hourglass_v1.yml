@@ -1,10 +1,10 @@
 dataset:
-  images_dir: data/synthetic_train_val/images
-  camera_param_file: ./data/synthetic_train_val/3D_labels/camPosition.txt
-  global_pose3d_gt_file: ./data/synthetic_train_val/3D_labels/handGestures.txt
-  global_mesh_gt_dir: ./data/synthetic_train_val/hand_3D_mesh
+  images_dir: data/real_world_testset/images
+  camera_param_file: data/real_world_testset/params.mat
+  global_pose3d_gt_file: data/real_world_testset/pose_gt.mat
+  global_mesh_gt_dir: data/real_world_testset/real_hand_3D_mesh
   val_cams_file: ./data/synthetic_train_val/3D_labels/val-camera.txt
-  sample_image_file: data/synthetic_train_val/images/l21/cam21/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l21_cam21_.0492.png
+  sample_image_file: data/real_world_testset/images/00018.jpg
   dataset_name: datasets.ntu.dataset_utils.HandPoseDataset
 training_details:
   trainer: "trainers.hourglass_trainer.Pose2DTrainer"
@@ -29,6 +29,6 @@ model:
   raw_image_size: 256
   model_img_size: 64
 test:
-  test_class: datasets.ntu.test_dataset.TestDataset
+  test_class: datasets.ntu_real.test_dataset.TestDataset
   model_file: exp/model_1.pth
   device: cpu
