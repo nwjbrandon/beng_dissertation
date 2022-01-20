@@ -7,7 +7,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from datasets.ntu.data_utils import cam_projection, init_pose3d_labels, read_data
+from datasets.ntu_real.data_utils import cam_projection, init_pose3d_labels, read_data
 
 
 def vector_to_heatmaps(keypoints, im_width, im_height, n_keypoints, model_img_size):

@@ -3,14 +3,14 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader
 
-from datasets.ntu.data_utils import (
+from datasets.ntu_real.data_utils import (
     draw_2d_skeleton,
     draw_3d_skeleton_on_ax,
     init_pose3d_labels,
     read_data,
     visualize_data
 )
-from datasets.ntu.dataset_utils import get_train_val_image_paths, heatmaps_to_coordinates
+from datasets.ntu_real.dataset_utils import get_train_val_image_paths, heatmaps_to_coordinates
 from utils.io import import_module
 
 

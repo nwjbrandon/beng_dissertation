@@ -181,11 +181,11 @@ class UNet(nn.Module):
 
 
 class Pose2dModel(nn.Module):
-    def __init__(self, n_classes):
+    def __init__(self, config):
         super().__init__()
-        self.n_classes = n_classes
+        self.n_keypoints = config["model"]["n_keypoints"]
         self.cpm = CPM(3, 64)
-        self.unet = UNet(64, n_classes)
+        self.unet = UNet(64, self.n_keypoints)
 
     def forward(self, x):
         features = self.cpm(x)
