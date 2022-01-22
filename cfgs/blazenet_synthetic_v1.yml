@@ -9,7 +9,7 @@ dataset:
 training_details:
   trainer: "trainers.blazenet_trainer.Pose2DTrainer"
   epochs: 10000
-  batch_size: 1
+  batch_size: 32
   optimizer: "torch.optim.Adam"
   learning_rate: 0.01
   num_workers: 4

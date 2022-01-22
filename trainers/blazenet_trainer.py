@@ -58,7 +58,7 @@ class Pose2DTrainer:
 
             heatmaps_pred = self.model(image_inp)
 
-            losses = self.criterion(heatmaps_pred, heatmaps_gt)
+            losses = self.criterion(heatmaps_pred[0], heatmaps_gt)
 
             losses.backward()
             self.optimizer.step()
@@ -80,7 +80,7 @@ class Pose2DTrainer:
 
                 heatmaps_pred = self.model(image_inp)
 
-                losses = self.criterion(heatmaps_pred, heatmaps_gt)
+                losses = self.criterion(heatmaps_pred[0], heatmaps_gt)
 
                 running_loss.append(losses.item())
 
