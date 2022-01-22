@@ -48,7 +48,7 @@ class ConvBn(nn.Module):
 
 class DownConv(nn.Module):
     def __init__(
-        self, in_channels, out_channels, kernel_size=3, stride=2, padding=1,
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
     ):
         super(DownConv, self).__init__()
         self._conv1 = ConvBn(
@@ -57,10 +57,12 @@ class DownConv(nn.Module):
         self._conv2 = ConvBn(
             out_channels, out_channels, kernel_size=kernel_size, stride=1, padding=padding,
         )
+        self._maxpool3 = nn.MaxPool2d(2, 2)
 
     def forward(self, x):
         x = self._conv1(x)
         x = self._conv2(x)
+        x = self._maxpool3(x)
         return x
 
 
@@ -108,18 +110,18 @@ class UpConv(nn.Module):
         self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
     ):
         super(UpConv, self).__init__()
-        self._up = nn.Upsample(scale_factor=2, mode="nearest")
-        self._conv1 = ConvBn(
+        self._up1 = nn.Upsample(scale_factor=2, mode="nearest")
+        self._conv2 = ConvBn(
             in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
-        self._conv2 = ConvBn(
-            out_channels, out_channels, kernel_size=kernel_size, stride=1, padding=padding,
+        self._conv3 = ConvBn(
+            out_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
 
     def forward(self, x):
-        x = self._up(x)
-        x = self._conv1(x)
+        x = self._up1(x)
         x = self._conv2(x)
+        x = self._conv3(x)
         return x
 
 
