@@ -3,7 +3,7 @@ import os.path as osp
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance
 from torch.utils.data import Dataset
 from torchvision import transforms
 
@@ -24,11 +24,14 @@ def vector_to_heatmaps(keypoints, im_width, im_height, n_keypoints, model_img_si
     visibility_vector = np.zeros([n_keypoints])
 
     for k, (x, y) in enumerate(keypoints_norm):
+        x = 0 if x < 0 else x
+        x = 0.999 if x >= 1 else x
+        y = 0 if y < 0 else y
+        y = 0.999 if y >= 1 else y
         assert x >= 0 and x <= 1 and y >= 0 and y <= 1
-        if x >= 0 and x <= 1 and y >= 0 and y <= 1:
-            heatmap = compute_heatmap(x, y, model_img_size)
-            heatmaps[k] = heatmap
-            visibility_vector[k] = 1
+        heatmap = compute_heatmap(x, y, model_img_size)
+        heatmaps[k] = heatmap
+        visibility_vector[k] = 1
 
     return heatmaps, visibility_vector
 
@@ -121,7 +124,11 @@ class HandPoseDataset(Dataset):
 
     def __getitem__(self, idx):
         # Get Labels
-        # "data/synthetic_train_val/images/l01/cam05/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam05_.0235.png" <- close to edge
+        """
+        Close to the edge
+        data/synthetic_train_val/images/l01/cam05/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam05_.0235.png"
+        data/synthetic_train_val/images/l01/cam08/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam08_.0155.png"
+        """
         image_name = self.image_names[idx]
         (
             local_pose3d_gt,
@@ -134,6 +141,9 @@ class HandPoseDataset(Dataset):
         )
 
         drot = -1
+        brightness_factor = -1
+        contrast_factor = -1
+        sharpness_factor = -1
 
         # Get RGB Image
         image = Image.open(image_name).convert("RGB")
@@ -141,6 +151,9 @@ class HandPoseDataset(Dataset):
 
         if self.is_training:
             drot = np.random.choice([0, 90, 180, 270])
+            brightness_factor = 1 + np.random.rand() * 3 / 10 - 0.15
+            contrast_factor = 1 + np.random.rand() * 3 / 10 - 0.15
+            sharpness_factor = 1 + np.random.rand() * 3 / 10 - 0.15
             z_rot = np.array(
                 [
                     [np.cos(np.deg2rad(drot)), -np.sin(np.deg2rad(drot)), 0],
@@ -151,6 +164,9 @@ class HandPoseDataset(Dataset):
             fl = cam_param[0]  # focal length
             local_pose3d_gt = local_pose3d_gt @ z_rot
             image = image.rotate(drot)
+            image = ImageEnhance.Brightness(image).enhance(brightness_factor)
+            image = ImageEnhance.Contrast(image).enhance(contrast_factor)
+            image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
 
         # Get 2D Poses
         fl = cam_param[0]  # focal length
@@ -161,26 +177,13 @@ class HandPoseDataset(Dataset):
 
         # Preprocess
         image_inp = self.image_transform(image)
-        heatmaps_gt, visibility_vector = vector_to_heatmaps(
+        heatmaps_gt, _ = vector_to_heatmaps(
             kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
         )
         kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] / im_width
         kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] / im_height
-        kpt_2d_gt = np.array(
-            [
-                [kpt_2d_gt[i][0], kpt_2d_gt[i][1], 1] if visibility_vector[i] else [0, 0, 0]
-                for i in range(self.n_keypoints)
-            ]
-        )
-        kpt_3d_gt = local_pose3d_gt / 100
-        kpt_3d_gt = np.array(
-            [
-                [local_pose3d_gt[i][0], local_pose3d_gt[i][1], local_pose3d_gt[i][2], 1]
-                if visibility_vector[i]
-                else [0, 0, 0, 0]
-                for i in range(self.n_keypoints)
-            ]
-        )
+        kpt_3d_gt = local_pose3d_gt
+
         return {
             "image_name": image_name,
             "image_inp": image_inp,  # img to 2d
@@ -188,4 +191,7 @@ class HandPoseDataset(Dataset):
             "kpt_2d_gt": kpt_2d_gt,  # 2d to 3d
             "kpt_3d_gt": kpt_3d_gt,  # 2d to 3d
             "drot": drot,
+            "brightness_factor": brightness_factor,
+            "contrast_factor": contrast_factor,
+            "sharpness_factor": sharpness_factor,
         }

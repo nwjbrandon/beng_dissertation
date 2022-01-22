@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import torch
-from PIL import Image
+from PIL import Image, ImageEnhance
 from torch.utils.data import DataLoader
 
 from datasets.ntu.data_utils import (
@@ -122,6 +122,15 @@ class TestDataset:
             kpt_2d_gt = data["kpt_2d_gt"].to(torch.device(self.config["test"]["device"]))
             kpt_3d_gt = data["kpt_3d_gt"].to(torch.device(self.config["test"]["device"]))
             drot = data["drot"].to(torch.device(self.config["test"]["device"]))
+            brightness_factor = data["brightness_factor"].to(
+                torch.device(self.config["test"]["device"])
+            )
+            contrast_factor = data["contrast_factor"].to(
+                torch.device(self.config["test"]["device"])
+            )
+            sharpness_factor = data["sharpness_factor"].to(
+                torch.device(self.config["test"]["device"])
+            )
 
             # Assume heatmaps_gt is output of the model
             image_name = data["image_name"][0]
@@ -129,18 +138,33 @@ class TestDataset:
             heatmaps_gt = heatmaps_gt.cpu().numpy()[0]
             kpt_3d_gt = kpt_3d_gt.cpu().numpy()[0]
             drot = drot.cpu().numpy()[0]
+            brightness_factor = brightness_factor.cpu().numpy()[0]
+            contrast_factor = contrast_factor.cpu().numpy()[0]
+            sharpness_factor = sharpness_factor.cpu().numpy()[0]
 
             kpt_2d_pred = heatmaps_to_coordinates(
                 heatmaps_gt, self.config["model"]["model_img_size"]
             )
 
             print(
-                "name:", image_name, "drot:", drot,
+                "name:",
+                image_name,
+                "drot:",
+                drot,
+                "brightness_factor:",
+                brightness_factor,
+                "contrast_factor:",
+                contrast_factor,
+                "sharpness_factor:",
+                sharpness_factor,
             )
             # Recover original 2d pose
             image = Image.open(image_name).convert("RGB")
             if drot != -1:
                 image = image.rotate(drot)
+                image = ImageEnhance.Brightness(image).enhance(brightness_factor)
+                image = ImageEnhance.Contrast(image).enhance(contrast_factor)
+                image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
             im_width, im_height = image.size
             kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] * im_width
             kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] * im_height
@@ -166,7 +190,7 @@ class TestDataset:
 
             fig = plt.figure(figsize=(5, 5))
             ax = plt.axes(projection="3d")
-            draw_3d_skeleton_on_ax(kpt_3d_gt * 100, ax)
+            draw_3d_skeleton_on_ax(kpt_3d_gt, ax)
             ax.set_title("GT 3D joints")
 
             plt.show()
