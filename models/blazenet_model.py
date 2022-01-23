@@ -8,11 +8,7 @@ class Conv(nn.Module):
     ):
         super(Conv, self).__init__()
         self._conv1 = nn.Conv2d(
-            in_channels,
-            out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
+            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
         self._act1 = nn.ReLU()
 
@@ -28,11 +24,7 @@ class ConvSig(nn.Module):
     ):
         super(ConvSig, self).__init__()
         self._conv1 = nn.Conv2d(
-            in_channels,
-            out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
+            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
         self._act1 = nn.Sigmoid()
 

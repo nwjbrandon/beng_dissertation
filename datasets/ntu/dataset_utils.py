@@ -3,7 +3,7 @@ import os.path as osp
 
 import cv2
 import numpy as np
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 from torch.utils.data import Dataset
 from torchvision import transforms
 
@@ -144,6 +144,8 @@ class HandPoseDataset(Dataset):
         brightness_factor = -1
         contrast_factor = -1
         sharpness_factor = -1
+        is_mirror = False
+        is_flip = False
 
         # Get RGB Image
         image = Image.open(image_name).convert("RGB")
@@ -151,9 +153,11 @@ class HandPoseDataset(Dataset):
 
         if self.is_training:
             drot = np.random.choice([0, 90, 180, 270])
-            brightness_factor = 1 + np.random.rand() * 3 / 10 - 0.15
-            contrast_factor = 1 + np.random.rand() * 3 / 10 - 0.15
-            sharpness_factor = 1 + np.random.rand() * 3 / 10 - 0.15
+            brightness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
+            contrast_factor = 1 + np.random.rand() * 4 / 10 - 0.2
+            sharpness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
+            is_mirror = True if np.random.rand() > 0.5 else False
+            is_flip = True if np.random.rand() > 0.5 else False
             z_rot = np.array(
                 [
                     [np.cos(np.deg2rad(drot)), -np.sin(np.deg2rad(drot)), 0],
@@ -167,6 +171,14 @@ class HandPoseDataset(Dataset):
             image = ImageEnhance.Brightness(image).enhance(brightness_factor)
             image = ImageEnhance.Contrast(image).enhance(contrast_factor)
             image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
+
+            if is_mirror:
+                image = ImageOps.mirror(image)
+                local_pose3d_gt[:, 0] = -local_pose3d_gt[:, 0]
+
+            if is_flip:
+                image = ImageOps.flip(image)
+                local_pose3d_gt[:, 1] = -local_pose3d_gt[:, 1]
 
         # Get 2D Poses
         fl = cam_param[0]  # focal length
@@ -194,4 +206,6 @@ class HandPoseDataset(Dataset):
             "brightness_factor": brightness_factor,
             "contrast_factor": contrast_factor,
             "sharpness_factor": sharpness_factor,
+            "is_mirror": is_mirror,
+            "is_flip": is_flip,
         }
