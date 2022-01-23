@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from utils.losses import HeatmapLoss, IoULoss
+from utils.losses import HeatmapLoss
 
 
 class Pose2DTrainer:
@@ -17,7 +17,6 @@ class Pose2DTrainer:
         self.scheduler = scheduler
         self.checkpoint_frequency = 1
         self.criterion1 = HeatmapLoss()
-        self.criterion2 = IoULoss()
 
     def train(self, train_dataloader, val_dataloader):
         for epoch in range(self.epochs):
@@ -59,7 +58,7 @@ class Pose2DTrainer:
 
             heatmaps_pred = self.model(image_inp)
 
-            losses = self.criterion(heatmaps_pred, heatmaps_gt)
+            losses = self.criterion(heatmaps_pred[0], heatmaps_gt)
 
             losses.backward()
             self.optimizer.step()
@@ -81,7 +80,7 @@ class Pose2DTrainer:
 
                 heatmaps_pred = self.model(image_inp)
 
-                losses = self.criterion(heatmaps_pred, heatmaps_gt)
+                losses = self.criterion(heatmaps_pred[0], heatmaps_gt)
 
                 running_loss.append(losses.item())
 
@@ -90,6 +89,5 @@ class Pose2DTrainer:
 
     def criterion(self, heatmaps_pred, heatmaps_gt):
         loss1 = self.criterion1(heatmaps_pred, heatmaps_gt)
-        loss2 = self.criterion2(heatmaps_pred, heatmaps_gt)
-        losses = loss1 + loss2
+        losses = loss1
         return losses

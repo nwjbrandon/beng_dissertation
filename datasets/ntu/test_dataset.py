@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import torch
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 from torch.utils.data import DataLoader
 
 from datasets.ntu.data_utils import (
@@ -48,7 +48,7 @@ class TestDataset:
                 heatmaps_gt = heatmaps_gt.to(torch.device(self.config["test"]["device"]))
 
                 heatmaps_pred = model(image_inp)
-                heatmaps_pred = heatmaps_pred.numpy()[0]
+                heatmaps_pred = heatmaps_pred[0].numpy()[0]
                 heatmaps_gt = heatmaps_gt.numpy()[0]
 
                 kpt_2d_pred = heatmaps_to_coordinates(
@@ -131,6 +131,8 @@ class TestDataset:
             sharpness_factor = data["sharpness_factor"].to(
                 torch.device(self.config["test"]["device"])
             )
+            is_mirror = data["is_mirror"].to(torch.device(self.config["test"]["device"]))
+            is_flip = data["is_flip"].to(torch.device(self.config["test"]["device"]))
 
             # Assume heatmaps_gt is output of the model
             image_name = data["image_name"][0]
@@ -141,6 +143,8 @@ class TestDataset:
             brightness_factor = brightness_factor.cpu().numpy()[0]
             contrast_factor = contrast_factor.cpu().numpy()[0]
             sharpness_factor = sharpness_factor.cpu().numpy()[0]
+            is_mirror = is_mirror.cpu().numpy()[0]
+            is_flip = is_flip.cpu().numpy()[0]
 
             kpt_2d_pred = heatmaps_to_coordinates(
                 heatmaps_gt, self.config["model"]["model_img_size"]
@@ -157,6 +161,10 @@ class TestDataset:
                 contrast_factor,
                 "sharpness_factor:",
                 sharpness_factor,
+                "is_mirror:",
+                is_mirror,
+                "is_flip:",
+                is_flip,
             )
             # Recover original 2d pose
             image = Image.open(image_name).convert("RGB")
@@ -165,6 +173,11 @@ class TestDataset:
                 image = ImageEnhance.Brightness(image).enhance(brightness_factor)
                 image = ImageEnhance.Contrast(image).enhance(contrast_factor)
                 image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
+                if is_mirror:
+                    image = ImageOps.mirror(image)
+                if is_flip:
+                    image = ImageOps.flip(image)
+
             im_width, im_height = image.size
             kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] * im_width
             kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] * im_height

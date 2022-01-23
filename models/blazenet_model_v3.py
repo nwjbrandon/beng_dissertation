@@ -10,7 +10,7 @@ class Conv(nn.Module):
         self._conv1 = nn.Conv2d(
             in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
-        self._act1 = nn.ReLU()
+        self._act1 = nn.ELU()
 
     def forward(self, x):
         x = self._conv1(x)
@@ -48,7 +48,7 @@ class ConvBn(nn.Module):
             bias=False,
         )
         self._batch_norm1 = nn.BatchNorm2d(out_channels)
-        self._act1 = nn.ReLU()
+        self._act1 = nn.ELU()
 
     def forward(self, x):
         x = self._conv1(x)

@@ -109,11 +109,11 @@ class OutConv(nn.Module):
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
-        self.conv1 = DownConv(in_channels=3, out_channels=16)
-        self.conv2 = DownConv(in_channels=16, out_channels=32)
-        self.conv3 = DownConv(in_channels=32, out_channels=64)
-        self.conv4 = DownConv(in_channels=64, out_channels=128)
-        self.conv5 = DownConv(in_channels=128, out_channels=192)
+        self.conv1 = DownConv(in_channels=16, out_channels=32)
+        self.conv2 = DownConv(in_channels=32, out_channels=64)
+        self.conv3 = DownConv(in_channels=64, out_channels=128)
+        self.conv4 = DownConv(in_channels=128, out_channels=256)
+        self.conv5 = DownConv(in_channels=256, out_channels=512)
 
     def forward(self, x):
         out1 = self.conv1(x)
@@ -127,10 +127,10 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, out_channels):
         super(Decoder, self).__init__()
-        self.conv6 = UpConv(in_channels=192, out_channels=32)
-        self.conv7 = UpConv(in_channels=160, out_channels=32)
-        self.conv8 = UpConv(in_channels=96, out_channels=32)
-        self.conv9 = UpConv(in_channels=64, out_channels=32, is_upsample=False)
+        self.conv6 = UpConv(in_channels=512, out_channels=32)
+        self.conv7 = UpConv(in_channels=288, out_channels=32)
+        self.conv8 = UpConv(in_channels=160, out_channels=32)
+        self.conv9 = UpConv(in_channels=96, out_channels=32, is_upsample=False)
         self.conv10 = OutConv(in_channels=32, out_channels=out_channels)
 
     def forward(self, out2, out3, out4, out5):
@@ -146,10 +146,12 @@ class Pose2dModel(nn.Module):
     def __init__(self, config):
         super(Pose2dModel, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
+        self.conv = ConvBn(in_channels=3, out_channels=16, kernel_size=3, stride=1, padding=1)
         self.encoder = Encoder()
         self.decoder = Decoder(self.out_channels)
 
     def forward(self, x):
+        x = self.conv(x)
         out2, out3, out4, out5 = self.encoder(x)
         heatmaps = self.decoder(out2, out3, out4, out5)
         return heatmaps, out2, out3, out4, out5
