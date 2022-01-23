@@ -11,9 +11,9 @@ class HeatmapLoss(torch.nn.Module):
         super(HeatmapLoss, self).__init__()
 
     def forward(self, pred, gt):
-        l = (pred - gt) ** 2
-        l = l.sum(-1).sum(-1).mean()
-        return l  ## l of dim bsize
+        l = pred - gt
+        l = (l * l) / 2 / 32  # TODO: 32 refers to batch size
+        return l.sum()
 
 
 class IoULoss(nn.Module):
