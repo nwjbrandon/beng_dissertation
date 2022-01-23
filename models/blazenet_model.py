@@ -13,9 +13,28 @@ class Conv(nn.Module):
             kernel_size=kernel_size,
             stride=stride,
             padding=padding,
-            bias=False,
         )
         self._act1 = nn.ReLU()
+
+    def forward(self, x):
+        x = self._conv1(x)
+        x = self._act1(x)
+        return x
+
+
+class ConvSig(nn.Module):
+    def __init__(
+        self, in_channels, out_channels, kernel_size, stride, padding,
+    ):
+        super(ConvSig, self).__init__()
+        self._conv1 = nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+        )
+        self._act1 = nn.Sigmoid()
 
     def forward(self, x):
         x = self._conv1(x)
@@ -54,92 +73,44 @@ class DownConv(nn.Module):
         self._conv1 = ConvBn(
             in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
-        self._conv2 = ConvBn(
-            out_channels, out_channels, kernel_size=kernel_size, stride=1, padding=padding,
-        )
-        self._maxpool3 = nn.MaxPool2d(2, 2)
+        self._maxpool2 = nn.MaxPool2d(2, 2)
 
     def forward(self, x):
         x = self._conv1(x)
-        x = self._conv2(x)
-        x = self._maxpool3(x)
-        return x
-
-
-class UpConvCat(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
-    ):
-        super(UpConvCat, self).__init__()
-        self._up = nn.Upsample(scale_factor=2, mode="nearest")
-        self._conv1 = ConvBn(
-            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-        self._conv2 = ConvBn(
-            out_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-
-    def forward(self, x1, x2):
-        x1 = self._up(x1)
-        x = torch.cat([x1, x2], dim=1)
-        x = self._conv1(x)
-        x = self._conv2(x)
-        return x
-
-
-class BridgeConv(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
-    ):
-        super(BridgeConv, self).__init__()
-        self._conv1 = ConvBn(
-            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-        self._conv2 = ConvBn(
-            out_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-
-    def forward(self, x):
-        x = self._conv1(x)
-        x = self._conv2(x)
+        x = self._maxpool2(x)
         return x
 
 
 class UpConv(nn.Module):
     def __init__(
-        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, is_upsample=True
     ):
         super(UpConv, self).__init__()
-        self._up1 = nn.Upsample(scale_factor=2, mode="nearest")
-        self._conv2 = ConvBn(
+        self.is_upsample = is_upsample
+        self._conv1 = ConvBn(
             in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
-        self._conv3 = ConvBn(
-            out_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
+        if self.is_upsample:
+            self._up2 = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False)
 
     def forward(self, x):
-        x = self._up1(x)
-        x = self._conv2(x)
-        x = self._conv3(x)
+        x = self._conv1(x)
+        if self.is_upsample:
+            x = self._up2(x)
         return x
 
 
 class OutConv(nn.Module):
     def __init__(
-        self, in_channels, out_channels, kernel_size=1, stride=1, padding=0,
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
     ):
         super(OutConv, self).__init__()
-        self._conv1 = Conv(
+        self._conv1 = ConvSig(
             in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-        self._conv2 = Conv(
-            out_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
 
     def forward(self, x):
         x = self._conv1(x)
-        x = self._conv2(x)
         return x
 
 
@@ -164,46 +135,19 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, out_channels):
         super(Decoder, self).__init__()
-        self.conv6 = BridgeConv(in_channels=192, out_channels=32)
-        self.conv7 = UpConvCat(in_channels=160, out_channels=32)
-        self.conv8 = UpConvCat(in_channels=96, out_channels=32)
-        self.conv9 = UpConvCat(in_channels=64, out_channels=32)
-        self.conv10 = UpConv(in_channels=32, out_channels=32)
-        self.conv11 = OutConv(in_channels=32, out_channels=out_channels)
+        self.conv6 = UpConv(in_channels=192, out_channels=32)
+        self.conv7 = UpConv(in_channels=160, out_channels=32)
+        self.conv8 = UpConv(in_channels=96, out_channels=32)
+        self.conv9 = UpConv(in_channels=64, out_channels=32, is_upsample=False)
+        self.conv10 = OutConv(in_channels=32, out_channels=out_channels)
 
     def forward(self, out2, out3, out4, out5):
         out6 = self.conv6(out5)
-        out7 = self.conv7(out6, out4)
-        out8 = self.conv8(out7, out3)
-        out9 = self.conv9(out8, out2)
-        out10 = self.conv10(out9)
-        heatmaps = self.conv11(out10)
+        out7 = self.conv7(torch.cat([out6, out4], dim=1))
+        out8 = self.conv8(torch.cat([out7, out3], dim=1))
+        out9 = self.conv9(torch.cat([out8, out2], dim=1))
+        heatmaps = self.conv10(out9)
         return heatmaps
-
-
-# class PoseRegressor(nn.Module):
-#     def __init__(self, out_channels):
-#         super(PoseRegressor, self).__init__()
-#         self.out_channels = out_channels
-#         self.conv12 = DownConv(in_channels=64, out_channels=32)
-#         self.conv13 = DownConv(in_channels=96, out_channels=64)
-#         self.conv14 = DownConv(in_channels=192, out_channels=128)
-#         self.conv15 = DownConv(in_channels=320, out_channels=192)
-#         self.conv16 = DownConv(in_channels=192, out_channels=192)
-#         self.conv17 = OutConv(in_channels=192, out_channels=out_channels, kernel_size=2)
-#         self.sigmoid1 = nn.Sigmoid()
-
-#     def forward(self, out9, out2, out3, out4, out5):
-#         B, _, _, _ = out9.shape
-#         out11 = self.conv12(torch.cat([out9, out2], dim=1))
-#         out12 = self.conv13(torch.cat([out11, out3], dim=1))
-#         out13 = self.conv14(torch.cat([out12, out4], dim=1))
-#         out14 = self.conv15(torch.cat([out13, out5], dim=1))
-#         out15 = self.conv16(out14)
-#         out16 = self.conv17(out15)
-#         kpts3d = out16.reshape(B, self.out_channels, -1)
-#         kpts3d = self.sigmoid1(kpts3d)
-#         return kpts3d
 
 
 class Pose2dModel(nn.Module):

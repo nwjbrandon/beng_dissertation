@@ -48,7 +48,7 @@ class TestDataset:
                 heatmaps_gt = heatmaps_gt.to(torch.device(self.config["test"]["device"]))
 
                 heatmaps_pred = model(image_inp)
-                heatmaps_pred = heatmaps_pred.numpy()[0]
+                heatmaps_pred = heatmaps_pred[0].numpy()[0]
                 heatmaps_gt = heatmaps_gt.numpy()[0]
 
                 kpt_2d_pred = heatmaps_to_coordinates(

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from utils.losses import HeatmapLoss
+from utils.losses import IoULoss
 
 
 class Pose2DTrainer:
@@ -16,7 +16,7 @@ class Pose2DTrainer:
         self.model_file = config["training_details"]["model_file"]
         self.scheduler = scheduler
         self.checkpoint_frequency = 1
-        self.criterion1 = HeatmapLoss()
+        self.criterion1 = IoULoss()
 
     def train(self, train_dataloader, val_dataloader):
         for epoch in range(self.epochs):
