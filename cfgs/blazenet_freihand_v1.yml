@@ -1,15 +1,14 @@
 dataset:
-  data_dir: data/hanco/
-  dataset_name: datasets.hanco.dataset_utils.HandPoseDataset
-  sid: 110
-  cid: 1
-  fid: 1
+  data_dir: data/freihand
+  dataset_name: datasets.freihand.dataset_utils.HandPoseDataset
+  sample_image_idx: 10
+  is_sample_training: True
 training_details:
   trainer: "trainers.blazenet_trainer.Pose2DTrainer"
   epochs: 10000
   batch_size: 32
   optimizer: "torch.optim.Adam"
-  learning_rate: 0.01
+  learning_rate: 0.1
   num_workers: 8
   shuffle: True
   scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
@@ -27,6 +26,6 @@ model:
   raw_image_size: 256
   model_img_size: 64
 test:
-  test_class: datasets.hanco.test_dataset.TestDataset
+  test_class: datasets.freihand.test_dataset.TestDataset
   model_file: exp/model_2.pth
   device: cpu
