@@ -56,7 +56,7 @@ def heatmaps_to_coordinates(joint_heatmaps, model_img_size):
 def get_train_val_image_paths(data_dir, is_training):
     if is_training:
         n_start = 0
-        n_end = 32560
+        n_end = 130239  # 32560
     else:
         n_start = 0
         n_end = 3960
@@ -93,7 +93,6 @@ class HandPoseDataset(Dataset):
         self.all_camera_params, self.all_global_pose3d_gt = init_pose3d_labels(
             self.data_dir, self.is_training
         )
-        print(len(self.all_camera_params), len(self.all_global_pose3d_gt))
         self.image_transform = transforms.Compose(
             [transforms.Resize(self.raw_image_size), transforms.ToTensor(),]
         )
@@ -105,7 +104,9 @@ class HandPoseDataset(Dataset):
         # Get Labels
         image_name = self.image_names[idx]
         cam_param, local_pose3d_gt = read_data(
-            idx, self.all_camera_params, self.all_global_pose3d_gt
+            idx % 32560 if self.is_training else idx,
+            self.all_camera_params,
+            self.all_global_pose3d_gt,
         )
         kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
         brightness_factor = -1
