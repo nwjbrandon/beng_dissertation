@@ -65,8 +65,24 @@ def init_pose3d_labels(data_dir, is_training):
     return all_camera_params, all_global_pose3d_gt
 
 
-def read_data(image_idx, all_camera_params, all_global_pose3d_gt):
-    return np.array(all_camera_params[image_idx]), np.array(all_global_pose3d_gt[image_idx])
+def read_data(
+    image_idx,
+    is_training,
+    all_camera_params_train,
+    all_global_pose3d_gt_train,
+    all_camera_params_val,
+    all_global_pose3d_gt_val,
+):
+    if is_training:
+        return (
+            np.array(all_camera_params_train[image_idx % 32560]),
+            np.array(all_global_pose3d_gt_train[image_idx % 32560]),
+        )
+    else:
+        return (
+            np.array(all_camera_params_val[image_idx]),
+            np.array(all_global_pose3d_gt_val[image_idx]),
+        )
 
 
 def draw_2d_skeleton(image, pose_uv):
@@ -175,9 +191,16 @@ def draw_3d_skeleton_on_ax(pose_cam_xyz, ax):
 
 
 def visualize_data(image_name, data_dir, is_sample_training, sample_image_idx):
-    all_camera_params, all_global_pose3d_gt = init_pose3d_labels(data_dir, is_sample_training)
+    all_camera_params_train, all_global_pose3d_gt_train = init_pose3d_labels(data_dir, True)
+    all_camera_params_val, all_global_pose3d_gt_val = init_pose3d_labels(data_dir, False)
+
     cam_param, local_pose3d_gt = read_data(
-        sample_image_idx, all_camera_params, all_global_pose3d_gt
+        sample_image_idx,
+        is_sample_training,
+        all_camera_params_train,
+        all_global_pose3d_gt_train,
+        all_camera_params_val,
+        all_global_pose3d_gt_val,
     )
 
     img = cv2.imread(image_name, cv2.IMREAD_UNCHANGED)

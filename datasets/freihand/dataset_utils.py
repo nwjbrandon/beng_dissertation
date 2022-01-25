@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 from PIL import Image, ImageEnhance
+from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision import transforms
 
@@ -54,20 +55,25 @@ def heatmaps_to_coordinates(joint_heatmaps, model_img_size):
 
 
 def get_train_val_image_paths(data_dir, is_training):
-    if is_training:
-        n_start = 0
-        n_end = 130239  # 32560
-    else:
-        n_start = 0
-        n_end = 3960
-
     image_paths = []
+
+    n_start, n_end = 0, 130239  # 32560
     for idx in range(n_start, n_end):
-        if is_training:
-            image_paths.append(os.path.join(data_dir, "train", "training", "rgb", "%08d.jpg" % idx))
-        else:
-            image_paths.append(os.path.join(data_dir, "val", "evaluation", "rgb", "%08d.jpg" % idx))
-    return image_paths
+        image_paths.append(
+            (os.path.join(data_dir, "train", "training", "rgb", "%08d.jpg" % idx), idx, True)
+        )
+
+    n_start, n_end = 0, 3960
+    for idx in range(n_start, n_end):
+        image_paths.append(
+            (os.path.join(data_dir, "val", "evaluation", "rgb", "%08d.jpg" % idx), idx, False)
+        )
+
+    train, test = train_test_split(image_paths, test_size=0.1, shuffle=True, random_state=42)
+    if is_training:
+        return train
+    else:
+        return test
 
 
 class HandPoseDataset(Dataset):
@@ -83,16 +89,20 @@ class HandPoseDataset(Dataset):
         self.n_keypoints = config["model"]["n_keypoints"]
         self.raw_image_size = config["model"]["raw_image_size"]
         self.model_img_size = config["model"]["model_img_size"]
+        self.data_dir = config["dataset"]["data_dir"]
 
         self.is_training = set_type == "train"
 
-        self.data_dir = config["dataset"]["data_dir"]
+        self.all_camera_params_train, self.all_global_pose3d_gt_train = init_pose3d_labels(
+            self.data_dir, True
+        )
+        self.all_camera_params_val, self.all_global_pose3d_gt_val = init_pose3d_labels(
+            self.data_dir, False
+        )
+
         self.image_names = get_train_val_image_paths(self.data_dir, is_training=self.is_training)
         print("Total Images:", len(self.image_names))
 
-        self.all_camera_params, self.all_global_pose3d_gt = init_pose3d_labels(
-            self.data_dir, self.is_training
-        )
         self.image_transform = transforms.Compose(
             [transforms.Resize(self.raw_image_size), transforms.ToTensor(),]
         )
@@ -102,11 +112,14 @@ class HandPoseDataset(Dataset):
 
     def __getitem__(self, idx):
         # Get Labels
-        image_name = self.image_names[idx]
+        image_name, image_idx, is_train_img = self.image_names[idx]
         cam_param, local_pose3d_gt = read_data(
-            idx % 32560 if self.is_training else idx,
-            self.all_camera_params,
-            self.all_global_pose3d_gt,
+            image_idx,
+            is_train_img,
+            self.all_camera_params_train,
+            self.all_global_pose3d_gt_train,
+            self.all_camera_params_val,
+            self.all_global_pose3d_gt_val,
         )
         kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
         brightness_factor = -1
