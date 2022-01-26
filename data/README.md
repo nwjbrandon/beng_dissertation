@@ -4,14 +4,13 @@
 - Original: https://github.com/3d-hand-shape/hand-graph-cnn
 - Forked https://github.com/nwjbrandon/hand_graph_cnn
 ```
-nwjbrandon@chloe:~/fyp/hand_pose_estimation$ tree -L 2 -f data/
-data
-└── data/synthetic_train_val
-    ├── data/synthetic_train_val/3D_labels
-    ├── data/synthetic_train_val/hand_3D_mesh
-    └── data/synthetic_train_val/images
+(fyp) nwjbrandon@chloe:~/fyp/hand_pose_estimation$ tree -L 1 -f data/synthetic_train_val/
+data/synthetic_train_val
+├── data/synthetic_train_val/3D_labels
+├── data/synthetic_train_val/hand_3D_mesh
+└── data/synthetic_train_val/images
 
-4 directories, 0 files
+3 directories, 0 files
 ```
 
 ## Freihand
