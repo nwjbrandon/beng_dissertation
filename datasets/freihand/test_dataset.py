@@ -90,11 +90,26 @@ class TestDataset:
 
     def sample(self):
         data_dir = self.config["dataset"]["data_dir"]
+        use_augmented = self.config["dataset"]["use_augmented"]
+        use_evaluation = self.config["dataset"]["use_evaluation"]
+        test_size = self.config["dataset"]["test_size"]
 
-        data = get_train_val_image_paths(data_dir, True)
+        data = get_train_val_image_paths(
+            data_dir,
+            is_training=True,
+            use_augmented=use_augmented,
+            use_evaluation=use_evaluation,
+            test_size=test_size,
+        )
         print(len(data), data[0])
 
-        data = get_train_val_image_paths(data_dir, False)
+        data = get_train_val_image_paths(
+            data_dir,
+            is_training=False,
+            use_augmented=use_augmented,
+            use_evaluation=use_evaluation,
+            test_size=test_size,
+        )
         print(len(data), data[0])
 
     def check(self):

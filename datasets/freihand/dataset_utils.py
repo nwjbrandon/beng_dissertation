@@ -54,22 +54,31 @@ def heatmaps_to_coordinates(joint_heatmaps, model_img_size):
     return keypoints_norm
 
 
-def get_train_val_image_paths(data_dir, is_training):
+def get_train_val_image_paths(data_dir, is_training, use_augmented, use_evaluation, test_size):
     image_paths = []
 
-    n_start, n_end = 0, 130239  # 32560
-    for idx in range(n_start, n_end):
-        image_paths.append(
-            (os.path.join(data_dir, "train", "training", "rgb", "%08d.jpg" % idx), idx, True)
-        )
+    if use_augmented:
+        n_start, n_end = 0, 130239  # 32560
+        raise NotImplementedError
+    else:
+        n_start, n_end = 0, 32560
+        for idx in range(n_start, n_end):
+            image_paths.append(
+                (os.path.join(data_dir, "train", "training", "rgb", "%08d.jpg" % idx), idx, True)
+            )
 
-    n_start, n_end = 0, 3960
-    for idx in range(n_start, n_end):
-        image_paths.append(
-            (os.path.join(data_dir, "val", "evaluation", "rgb", "%08d.jpg" % idx), idx, False)
-        )
+        if use_evaluation:
+            n_start, n_end = 0, 3960
+            for idx in range(n_start, n_end):
+                image_paths.append(
+                    (
+                        os.path.join(data_dir, "val", "evaluation", "rgb", "%08d.jpg" % idx),
+                        idx,
+                        False,
+                    )
+                )
 
-    train, test = train_test_split(image_paths, test_size=0.1, shuffle=True, random_state=42)
+    train, test = train_test_split(image_paths, test_size=test_size, shuffle=True, random_state=42)
     if is_training:
         return train
     else:
@@ -90,6 +99,9 @@ class HandPoseDataset(Dataset):
         self.raw_image_size = config["model"]["raw_image_size"]
         self.model_img_size = config["model"]["model_img_size"]
         self.data_dir = config["dataset"]["data_dir"]
+        self.use_augmented = config["dataset"]["use_augmented"]
+        self.use_evaluation = config["dataset"]["use_evaluation"]
+        self.test_size = config["dataset"]["test_size"]
 
         self.is_training = set_type == "train"
 
@@ -100,7 +112,13 @@ class HandPoseDataset(Dataset):
             self.data_dir, False
         )
 
-        self.image_names = get_train_val_image_paths(self.data_dir, is_training=self.is_training)
+        self.image_names = get_train_val_image_paths(
+            self.data_dir,
+            is_training=self.is_training,
+            use_augmented=self.use_augmented,
+            use_evaluation=self.use_evaluation,
+            test_size=self.test_size,
+        )
         print("Total Images:", len(self.image_names))
 
         self.image_transform = transforms.Compose(
