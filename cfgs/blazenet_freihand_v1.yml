@@ -5,7 +5,7 @@ dataset:
   sample_image_idx: 10
   is_sample_training: True
   use_augmented: False
-  use_evaluation: True
+  use_evaluation: False
   test_size: 0.1
 training_details:
   trainer: trainers.blazenet_trainer.Pose2DTrainer

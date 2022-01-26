@@ -127,6 +127,7 @@ class TestDataset:
             heatmaps_gt = data["heatmaps_gt"].to(torch.device(self.config["test"]["device"]))
             kpt_2d_gt = data["kpt_2d_gt"].to(torch.device(self.config["test"]["device"]))
             kpt_3d_gt = data["kpt_3d_gt"].to(torch.device(self.config["test"]["device"]))
+            drot = data["drot"].to(torch.device(self.config["test"]["device"]))
             brightness_factor = data["brightness_factor"].to(
                 torch.device(self.config["test"]["device"])
             )
@@ -146,6 +147,7 @@ class TestDataset:
             kpt_2d_pred = heatmaps_to_coordinates(
                 heatmaps_gt, self.config["model"]["model_img_size"]
             )
+            drot = drot.cpu().numpy()[0]
             brightness_factor = brightness_factor.cpu().numpy()[0]
             contrast_factor = contrast_factor.cpu().numpy()[0]
             sharpness_factor = sharpness_factor.cpu().numpy()[0]
@@ -153,6 +155,8 @@ class TestDataset:
             print(
                 "name:",
                 image_name,
+                "drot:",
+                drot,
                 "brightness_factor:",
                 brightness_factor,
                 "contrast_factor:",
@@ -166,6 +170,7 @@ class TestDataset:
                 image = ImageEnhance.Brightness(image).enhance(brightness_factor)
                 image = ImageEnhance.Contrast(image).enhance(contrast_factor)
                 image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
+                image = image.rotate(drot)
 
             im_width, im_height = image.size
             kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] * im_width

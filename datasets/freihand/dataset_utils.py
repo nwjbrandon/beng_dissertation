@@ -130,7 +130,9 @@ class HandPoseDataset(Dataset):
 
     def __getitem__(self, idx):
         # Get Labels
+        # image_idx, image_name, is_train_img = 327, "data/freihand/train/training/rgb/00019770.jpg", True
         image_name, image_idx, is_train_img = self.image_names[idx]
+
         cam_param, local_pose3d_gt = read_data(
             image_idx,
             is_train_img,
@@ -139,7 +141,8 @@ class HandPoseDataset(Dataset):
             self.all_camera_params_val,
             self.all_global_pose3d_gt_val,
         )
-        kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
+
+        drot = -1
         brightness_factor = -1
         contrast_factor = -1
         sharpness_factor = -1
@@ -149,6 +152,7 @@ class HandPoseDataset(Dataset):
         im_width, im_height = image.size
 
         if self.is_training:
+            drot = np.random.choice([0, 90, 180, 270])
             brightness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
             contrast_factor = 1 + np.random.rand() * 4 / 10 - 0.2
             sharpness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
@@ -156,12 +160,26 @@ class HandPoseDataset(Dataset):
             image = ImageEnhance.Brightness(image).enhance(brightness_factor)
             image = ImageEnhance.Contrast(image).enhance(contrast_factor)
             image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
+            image = image.rotate(drot)
+            z_rot = np.array(
+                [
+                    [np.cos(np.deg2rad(drot)), -np.sin(np.deg2rad(drot)), 0],
+                    [np.sin(np.deg2rad(drot)), np.cos(np.deg2rad(drot)), 0],
+                    [0, 0, 1],
+                ]
+            )
+            local_pose3d_gt = local_pose3d_gt @ z_rot
 
         # Preprocess
         image_inp = self.image_transform(image)
-        heatmaps_gt, _ = vector_to_heatmaps(
-            kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
-        )
+        kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
+        try:
+            heatmaps_gt, _ = vector_to_heatmaps(
+                kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
+            )
+        except:
+            print(idx, image_name)
+            raise
         kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] / im_width
         kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] / im_height
         kpt_3d_gt = local_pose3d_gt
@@ -172,6 +190,7 @@ class HandPoseDataset(Dataset):
             "heatmaps_gt": heatmaps_gt,  # img to 2d
             "kpt_2d_gt": kpt_2d_gt,  # 2d to 3d
             "kpt_3d_gt": kpt_3d_gt,  # 2d to 3d
+            "drot": drot,
             "brightness_factor": brightness_factor,
             "contrast_factor": contrast_factor,
             "sharpness_factor": sharpness_factor,
