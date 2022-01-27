@@ -1,0 +1,32 @@
+description: "blazenet model for pose 2d estimation with ho3d"
+dataset:
+  data_dir: data/ho3d
+  dataset_name: datasets.ho3d.dataset_utils.HandPoseDataset
+  sample_image: data/ho3d/train/MDF12/rgb/1552.png 
+  sample_meta: data/ho3d/train/MDF12/meta/1552.pkl
+training_details:
+  trainer: trainers.blazenet_trainer.Pose2DTrainer
+  epochs: 10000
+  batch_size: 32
+  optimizer: torch.optim.Adam
+  learning_rate: 0.01
+  num_workers: 8
+  shuffle: False
+  scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
+  scheduler_factor: 0.5
+  scheduler_patience: 10
+  scheduler_verbose: True
+  scheduler_threshold: 0.0001
+  device: cuda
+  loss_file: exp/loss_info.txt
+  model_file: exp/model
+model:
+  model_name: models.blazenet_model.Pose2dModel
+  model_file: ""
+  n_keypoints: 21
+  raw_image_size: 256
+  model_img_size: 64
+test:
+  test_class: datasets.ho3d.test_dataset.TestDataset
+  model_file: exp/model_1.pth
+  device: cpu
