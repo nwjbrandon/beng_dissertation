@@ -11,7 +11,7 @@ training_details:
   optimizer: torch.optim.Adam
   learning_rate: 0.01
   num_workers: 8
-  shuffle: False
+  shuffle: True
   scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
   scheduler_factor: 0.5
   scheduler_patience: 10

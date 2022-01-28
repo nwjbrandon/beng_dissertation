@@ -1,6 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
 color_hand_joints = [
     [1.0, 0.0, 0.0],
@@ -29,6 +30,21 @@ coordChangeMat = np.array([[1.0, 0.0, 0.0], [0, -1.0, 0.0], [0.0, 0.0, -1.0]], d
 reorder_idx = np.array([0, 13, 14, 15, 16, 1, 2, 3, 17, 4, 5, 6, 18, 10, 11, 12, 19, 7, 8, 9, 20])
 
 """ General util functions. """
+
+
+def pad_to_square(pil_img, background_color):
+    # https://note.nkmk.me/en/python-pillow-add-margin-expand-canvas/
+    width, height = pil_img.size
+    if width == height:
+        return pil_img
+    elif width > height:
+        result = Image.new(pil_img.mode, (width, width), background_color)
+        result.paste(pil_img, (0, 0))
+        return result
+    else:
+        result = Image.new(pil_img.mode, (height, height), background_color)
+        result.paste(pil_img, (0, 0))
+        return result
 
 
 def cam_projection(local_pose3d, cam_proj_mat):
@@ -123,6 +139,7 @@ def draw_3d_skeleton_on_ax(pose_cam_xyz, ax):
     ax.set_xlim3d(x_radius)
     ax.set_zlim3d(z_radius)
     ax.set_ylim3d(y_radius)
+    ax.view_init(elev=-90, azim=-90)
 
     for joint_ind in range(pose_cam_xyz.shape[0]):
         ax.plot(

@@ -6,7 +6,7 @@ from PIL import Image, ImageEnhance
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from datasets.ho3d.data_utils import cam_projection, read_data
+from datasets.ho3d.data_utils import cam_projection, pad_to_square, read_data
 
 
 def vector_to_heatmaps(keypoints, im_width, im_height, n_keypoints, model_img_size):
@@ -113,9 +113,13 @@ class HandPoseDataset(Dataset):
         brightness_factor = -1
         contrast_factor = -1
         sharpness_factor = -1
+        red = int(np.random.rand() * 255)
+        green = int(np.random.rand() * 255)
+        blue = int(np.random.rand() * 255)
 
         # Get RGB Image
         image = Image.open(image_name).convert("RGB")
+        image = pad_to_square(image, (red, green, blue))
         im_width, im_height = image.size
 
         if self.is_training:
@@ -128,8 +132,8 @@ class HandPoseDataset(Dataset):
             image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
 
         # Preprocess
-        image_inp = self.image_transform(image)
         kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
+        image_inp = self.image_transform(image)
         try:
             heatmaps_gt, _ = vector_to_heatmaps(
                 kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
@@ -150,4 +154,7 @@ class HandPoseDataset(Dataset):
             "brightness_factor": brightness_factor,
             "contrast_factor": contrast_factor,
             "sharpness_factor": sharpness_factor,
+            "red": red,
+            "green": green,
+            "blue": blue,
         }

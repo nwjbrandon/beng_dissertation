@@ -3,7 +3,12 @@ import torch
 from PIL import Image, ImageEnhance
 from torch.utils.data import DataLoader
 
-from datasets.ho3d.data_utils import draw_2d_skeleton, draw_3d_skeleton_on_ax, visualize_data
+from datasets.ho3d.data_utils import (
+    draw_2d_skeleton,
+    draw_3d_skeleton_on_ax,
+    pad_to_square,
+    visualize_data
+)
 from datasets.ho3d.dataset_utils import get_train_val_image_paths, heatmaps_to_coordinates
 from utils.io import import_module
 
@@ -109,6 +114,9 @@ class TestDataset:
             sharpness_factor = data["sharpness_factor"].to(
                 torch.device(self.config["test"]["device"])
             )
+            red = data["red"].to(torch.device(self.config["test"]["device"]))
+            green = data["green"].to(torch.device(self.config["test"]["device"]))
+            blue = data["blue"].to(torch.device(self.config["test"]["device"]))
 
             # Assume heatmaps_gt is output of the model
             image_name = data["image_name"][0]
@@ -122,6 +130,9 @@ class TestDataset:
             brightness_factor = brightness_factor.cpu().numpy()[0]
             contrast_factor = contrast_factor.cpu().numpy()[0]
             sharpness_factor = sharpness_factor.cpu().numpy()[0]
+            red = red.cpu().numpy()[0]
+            green = green.cpu().numpy()[0]
+            blue = blue.cpu().numpy()[0]
 
             print(
                 "name:",
@@ -132,19 +143,27 @@ class TestDataset:
                 contrast_factor,
                 "sharpness_factor:",
                 sharpness_factor,
+                "red:",
+                red,
+                "green:",
+                green,
+                "blue:",
+                blue,
             )
             # Recover original 2d pose
             image = Image.open(image_name).convert("RGB")
-            if brightness_factor != -1:
-                image = ImageEnhance.Brightness(image).enhance(brightness_factor)
-                image = ImageEnhance.Contrast(image).enhance(contrast_factor)
-                image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
+            image = pad_to_square(image, (red, green, blue))
 
             im_width, im_height = image.size
             kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] * im_width
             kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] * im_height
             kpt_2d_pred[:, 0] = kpt_2d_pred[:, 0] * im_width
             kpt_2d_pred[:, 1] = kpt_2d_pred[:, 1] * im_height
+
+            if brightness_factor != -1:
+                image = ImageEnhance.Brightness(image).enhance(brightness_factor)
+                image = ImageEnhance.Contrast(image).enhance(contrast_factor)
+                image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
 
             # Draw 2d pose on image from heatmap
             fig = plt.figure(figsize=(5, 5))
