@@ -130,13 +130,7 @@ class HandPoseDataset(Dataset):
         data/synthetic_train_val/images/l01/cam08/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam08_.0155.png"
         """
         image_name = self.image_names[idx]
-        (
-            local_pose3d_gt,
-            local_mesh_pts_gt,
-            local_mesh_normal_gt,
-            cam_param,
-            mesh_tri_idx,
-        ) = read_data(
+        (local_pose3d_gt, cam_param,) = read_data(
             image_name, self.all_camera_params, self.all_global_pose3d_gt, self.global_mesh_gt_dir
         )
 
