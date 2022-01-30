@@ -1,13 +1,12 @@
-import glob
-import os.path as osp
+import os
 
 import cv2
 import numpy as np
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image, ImageEnhance
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from datasets.ntu.data_utils import cam_projection, init_pose3d_labels, read_data
+from datasets.ho3d.data_utils import cam_projection, pad_to_square, read_data
 
 
 def vector_to_heatmaps(keypoints, im_width, im_height, n_keypoints, model_img_size):
@@ -54,33 +53,24 @@ def heatmaps_to_coordinates(joint_heatmaps, model_img_size):
     return keypoints_norm
 
 
-def get_train_val_image_paths(image_dir, val_set_path, is_training):
-    """
-    get training or validation image paths
-    :param image_dir:
-    :param val_set_path:
-    :param train_val_flag:
-    :return:
-    """
-    val_cameras = []
-    with open(val_set_path) as reader:
-        for line in reader:
-            val_cameras.append(line.strip())
-    val_cameras = set(val_cameras)
-    lighting_folders = glob.glob(osp.join(image_dir, "l*"))
-
+def get_train_val_image_paths(data_dir, is_training):
     image_paths = []
-    for lighting_folder in lighting_folders:
-        cam_folders = glob.glob(osp.join(lighting_folder, "cam*"))
-        for cam_folder in cam_folders:
-            cam_name = osp.basename(cam_folder)
-            if is_training:
-                if cam_name not in val_cameras:
-                    image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
-            else:
-                if cam_name in val_cameras:
-                    image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
+    data_dir = os.path.join(data_dir, "train")
 
+    for subject in os.listdir(os.path.join(data_dir)):
+        s_path = os.path.join(data_dir, subject)
+        rgb = os.path.join(s_path, "rgb")
+        meta = os.path.join(s_path, "meta")
+        for rgb_file in os.listdir(rgb):
+            file_number = rgb_file.split(".")[0]
+            meta_file = os.path.join(meta, file_number + ".pkl")
+            img_path = os.path.join(rgb, rgb_file)
+            if is_training:
+                if subject != "MC6":
+                    image_paths.append((img_path, meta_file))
+            else:
+                if subject == "MC6":
+                    image_paths.append((img_path, meta_file))
     return image_paths
 
 
@@ -94,29 +84,18 @@ class HandPoseDataset(Dataset):
 
     def __init__(self, config, set_type="train"):
         self.device = config["training_details"]["device"]
-        self.camera_param_path = config["dataset"]["camera_param_file"]
-        self.global_pose3d_gt_path = config["dataset"]["global_pose3d_gt_file"]
-        self.global_mesh_gt_dir = config["dataset"]["global_mesh_gt_dir"]
         self.n_keypoints = config["model"]["n_keypoints"]
         self.raw_image_size = config["model"]["raw_image_size"]
         self.model_img_size = config["model"]["model_img_size"]
+        self.data_dir = config["dataset"]["data_dir"]
 
         self.is_training = set_type == "train"
 
-        self.data_dir = config["dataset"]["images_dir"]
-        self.val_cams_file = config["dataset"]["val_cams_file"]
-        # glob.glob(f"{self.data_dir}/**/*.png", recursive=True)
-        self.image_names = get_train_val_image_paths(
-            self.data_dir, self.val_cams_file, is_training=self.is_training
-        )
+        self.image_names = get_train_val_image_paths(self.data_dir, is_training=self.is_training,)
         print("Total Images:", len(self.image_names))
 
-        self.all_camera_params, self.all_global_pose3d_gt = init_pose3d_labels(
-            self.camera_param_path, self.global_pose3d_gt_path
-        )
-
         self.image_transform = transforms.Compose(
-            [transforms.Resize(self.raw_image_size), transforms.ToTensor(),]
+            [transforms.Resize((self.raw_image_size, self.raw_image_size)), transforms.ToTensor(),]
         )
 
     def __len__(self):
@@ -125,67 +104,43 @@ class HandPoseDataset(Dataset):
     def __getitem__(self, idx):
         # Get Labels
         """
-        Close to the edge
-        data/synthetic_train_val/images/l01/cam05/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam05_.0235.png"
-        data/synthetic_train_val/images/l01/cam08/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam08_.0155.png"
+        data/ho3d/train/MDF12/rgb/0061.png data/ho3d/train/MDF12/meta/0061.pkl
         """
-        image_name = self.image_names[idx]
-        (local_pose3d_gt, cam_param,) = read_data(
-            image_name, self.all_camera_params, self.all_global_pose3d_gt, self.global_mesh_gt_dir
-        )
+        image_name, meta_name = self.image_names[idx]
 
-        drot = -1
+        cam_param, local_pose3d_gt = read_data(meta_name)
+
         brightness_factor = -1
         contrast_factor = -1
         sharpness_factor = -1
-        is_mirror = False
-        is_flip = False
+        red = int(np.random.rand() * 255)
+        green = int(np.random.rand() * 255)
+        blue = int(np.random.rand() * 255)
 
         # Get RGB Image
         image = Image.open(image_name).convert("RGB")
+        image = pad_to_square(image, (red, green, blue))
         im_width, im_height = image.size
 
         if self.is_training:
-            drot = np.random.choice([0, 90, 180, 270])
             brightness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
             contrast_factor = 1 + np.random.rand() * 4 / 10 - 0.2
             sharpness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
-            is_mirror = True if np.random.rand() > 0.5 else False
-            is_flip = True if np.random.rand() > 0.5 else False
-            z_rot = np.array(
-                [
-                    [np.cos(np.deg2rad(drot)), -np.sin(np.deg2rad(drot)), 0],
-                    [np.sin(np.deg2rad(drot)), np.cos(np.deg2rad(drot)), 0],
-                    [0, 0, 1],
-                ]
-            )
-            fl = cam_param[0]  # focal length
-            local_pose3d_gt = local_pose3d_gt @ z_rot
-            image = image.rotate(drot)
+
             image = ImageEnhance.Brightness(image).enhance(brightness_factor)
             image = ImageEnhance.Contrast(image).enhance(contrast_factor)
             image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
 
-            if is_mirror:
-                image = ImageOps.mirror(image)
-                local_pose3d_gt[:, 0] = -local_pose3d_gt[:, 0]
-
-            if is_flip:
-                image = ImageOps.flip(image)
-                local_pose3d_gt[:, 1] = -local_pose3d_gt[:, 1]
-
-        # Get 2D Poses
-        fl = cam_param[0]  # focal length
-        cam_proj_mat = np.array(
-            [[fl, 0.0, im_width / 2.0], [0.0, fl, im_height / 2.0], [0.0, 0.0, 1.0]]
-        )
-        kpt_2d_gt = cam_projection(local_pose3d_gt, cam_proj_mat)
-
         # Preprocess
+        kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
         image_inp = self.image_transform(image)
-        heatmaps_gt, _ = vector_to_heatmaps(
-            kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
-        )
+        try:
+            heatmaps_gt, _ = vector_to_heatmaps(
+                kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
+            )
+        except:
+            print(idx, image_name, meta_name)
+            raise
         kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] / im_width
         kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] / im_height
         kpt_3d_gt = local_pose3d_gt
@@ -196,10 +151,10 @@ class HandPoseDataset(Dataset):
             "heatmaps_gt": heatmaps_gt,  # img to 2d
             "kpt_2d_gt": kpt_2d_gt,  # 2d to 3d
             "kpt_3d_gt": kpt_3d_gt,  # 2d to 3d
-            "drot": drot,
             "brightness_factor": brightness_factor,
             "contrast_factor": contrast_factor,
             "sharpness_factor": sharpness_factor,
-            "is_mirror": is_mirror,
-            "is_flip": is_flip,
+            "red": red,
+            "green": green,
+            "blue": blue,
         }

@@ -513,19 +513,7 @@ def read_data(im_path, all_camera_params, all_global_pose3d_gt, global_mesh_gt_d
     # get ground truth of 3D hand pose
     global_pose3d_gt = all_global_pose3d_gt[pose_id]  # (21, 3)
     local_pose3d_gt = transform_global_to_cam(global_pose3d_gt, cam_param)  # (21, 3)
-
-    # get ground truth of 3D hand mesh
-    mesh_files = glob.glob(osp.join(global_mesh_gt_dir, "*.%04d.obj" % (pose_id + 1)))
-    assert len(mesh_files) == 1, "Cannot find a unique mesh file for pose %04d" % (pose_id + 1)
-    mesh_file = mesh_files[0]
-    global_mesh_pts_gt, global_mesh_normal_gt, mesh_tri_idx = load_mesh_from_obj(mesh_file)
-    # global_mesh_pts_gt: (N_vertex, 3), global_mesh_normal_gt: (N_tris, 3)
-    # mesh_tri_idx: (N_tris, 3)
-
-    local_mesh_pts_gt = transform_global_to_cam(global_mesh_pts_gt, cam_param)  # (N_vertex, 3)
-    local_mesh_normal_gt = transform_global_to_cam(global_mesh_normal_gt, cam_param)
-
-    return local_pose3d_gt, local_mesh_pts_gt, local_mesh_normal_gt, cam_param, mesh_tri_idx
+    return local_pose3d_gt, cam_param
 
 
 def visualize_data(im_path, local_pose3d_gt, local_mesh_pts_gt, cam_param, mesh_tri_idx):
