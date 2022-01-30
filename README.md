@@ -1,5 +1,14 @@
 # Hand Pose Estimation
 
+<p align="center">
+  <img alt="inference 1" src="assets/1.png" width="15%">
+  <img alt="inference 2" src="assets/2.png" width="15%">
+  <img alt="inference 3" src="assets/3.png" width="15%">
+  <img alt="inference 4" src="assets/4.png" width="15%">
+  <img alt="inference 5" src="assets/5.png" width="15%">
+  <img alt="inference 6" src="assets/6.png" width="15%">
+</p>
+
 ## Setup (Ubuntu 18 Python3.8)
 - Install dependencies
 ```
