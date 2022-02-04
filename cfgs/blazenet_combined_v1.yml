@@ -1,3 +1,4 @@
+description: "blazenet model for pose 2d estimation with freihand and ntu"
 dataset:
   freihand:
     data_dir: data/freihand
