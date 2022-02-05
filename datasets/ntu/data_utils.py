@@ -144,13 +144,12 @@ def draw_3d_skeleton_on_ax(pose_cam_xyz, ax):
     assert pose_cam_xyz.shape[0] == 21
 
     marker_sz = 15
-    x_radius = [-10, 10]
-    y_radius = [-10, 10]
-    z_radius = [15, 35]
+    x_radius = [-0.08, 0.08]
+    y_radius = [-0.08, 0.08]
+    z_radius = [-0.08, 0.08]
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    ax.view_init(elev=-85, azim=-75)
     ax.set_xlim3d(x_radius)
     ax.set_zlim3d(z_radius)
     ax.set_ylim3d(y_radius)

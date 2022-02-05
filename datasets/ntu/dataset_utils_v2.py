@@ -4,7 +4,6 @@ import os.path as osp
 import cv2
 import numpy as np
 from PIL import Image, ImageEnhance, ImageOps
-from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision import transforms
 
@@ -97,13 +96,6 @@ def get_train_val_image_paths(image_dir, val_set_path, test_size, is_training):
                     image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
 
     return image_paths
-    #         image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
-
-    # train, test = train_test_split(image_paths, test_size=test_size, shuffle=True, random_state=42)
-    # if is_training:
-    #     return train
-    # else:
-    #     return test
 
 
 class HandPoseDataset(Dataset):
@@ -214,7 +206,7 @@ class HandPoseDataset(Dataset):
         )
         kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] / im_width
         kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] / im_height
-        kpt_3d_gt = local_pose3d_gt
+        kpt_3d_gt = (local_pose3d_gt - local_pose3d_gt[9]) / 100
 
         return {
             "image_name": image_name,

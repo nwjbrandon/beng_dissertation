@@ -6,8 +6,8 @@ data/ho3d/
 __pycache__/
 weights/
 others/
+exp/*.txt
 
 *.jpg
 *.json
 *.pth
-*.txt

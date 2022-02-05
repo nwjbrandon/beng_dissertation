@@ -153,9 +153,9 @@ def draw_3d_skeleton_on_ax(pose_cam_xyz, ax):
     assert pose_cam_xyz.shape[0] == 21
 
     marker_sz = 15
-    x_radius = [-1.5, 1.5]
-    y_radius = [-1.5, 1.5]
-    z_radius = [-1.5, 1.5]
+    x_radius = [-0.08, 0.08]
+    y_radius = [-0.08, 0.08]
+    z_radius = [-0.08, 0.08]
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")

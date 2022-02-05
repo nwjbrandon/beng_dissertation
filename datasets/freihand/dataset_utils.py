@@ -193,7 +193,7 @@ class HandPoseDataset(Dataset):
             raise
         kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] / im_width
         kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] / im_height
-        kpt_3d_gt = local_pose3d_gt
+        kpt_3d_gt = local_pose3d_gt - local_pose3d_gt[9]
 
         return {
             "image_name": image_name,

@@ -10,7 +10,7 @@ from models.blazenet_model_v4 import Pose2dModel
 config = {
     "model": {
         "n_keypoints": 21,
-        "model_file": "exp/model_1.pth",
+        "model_file": "model_9.pth",
         "device": "cpu",
         "raw_image_size": 256,
         "model_img_size": 64,
@@ -21,6 +21,20 @@ model = model.to(config["model"]["device"])
 model.load_state_dict(
     torch.load(config["model"]["model_file"], map_location=torch.device(config["model"]["device"]),)
 )
+# for name, param in model.named_parameters():
+#     print(name, param.grad)
+for name, param in model.resnet.named_parameters():
+    param.requires_grad = False
+    print(name, param.requires_grad)
+
+for name, param in model.decoder.named_parameters():
+    param.requires_grad = False
+    print(name, param.requires_grad)
+
+for name, param in model.named_parameters():
+    print(name, param.requires_grad)
+
+raise
 image_transform = transforms.Compose(
     [transforms.Resize(config["model"]["raw_image_size"]), transforms.ToTensor(),]
 )

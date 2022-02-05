@@ -211,8 +211,7 @@ class TestDataset:
 
             fig = plt.figure(figsize=(5, 5))
             ax = plt.axes(projection="3d")
-            kpt_3d_gt = kpt_3d_gt - kpt_3d_gt[0]
-            draw_3d_skeleton_on_ax(kpt_3d_gt * 10, ax)
+            draw_3d_skeleton_on_ax(kpt_3d_gt, ax)
             ax.set_title("GT 3D joints")
 
             plt.show()
