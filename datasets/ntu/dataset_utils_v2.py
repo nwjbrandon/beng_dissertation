@@ -68,19 +68,42 @@ def get_train_val_image_paths(image_dir, val_set_path, test_size, is_training):
         for line in reader:
             val_cameras.append(line.strip())
     val_cameras = set(val_cameras)
-    lighting_folders = ["data/synthetic_train_val/images/l01"]
+    # lighting_folders = ["data/synthetic_train_val/images/l01"]
+    lighting_folders = glob.glob(osp.join(image_dir, "l*"))
 
     image_paths = []
     for lighting_folder in lighting_folders:
         cam_folders = glob.glob(osp.join(lighting_folder, "cam*"))
         for cam_folder in cam_folders:
-            image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
+            cam_name = osp.basename(cam_folder)
+            if cam_name in [
+                "cam11",
+                "cam12",
+                "cam13",
+                "cam14",
+                "cam15",
+                "cam16",
+                "cam17",
+                "cam18",
+                "cam19",
+                "cam20",
+            ]:
+                continue
+            if is_training:
+                if cam_name not in val_cameras:
+                    image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
+            else:
+                if cam_name in val_cameras:
+                    image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
 
-    train, test = train_test_split(image_paths, test_size=test_size, shuffle=True, random_state=42)
-    if is_training:
-        return train
-    else:
-        return test
+    return image_paths
+    #         image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
+
+    # train, test = train_test_split(image_paths, test_size=test_size, shuffle=True, random_state=42)
+    # if is_training:
+    #     return train
+    # else:
+    #     return test
 
 
 class HandPoseDataset(Dataset):
