@@ -103,6 +103,5 @@ class Pose3DTrainer:
     def criterion(self, heatmaps_pred, heatmaps_gt, kpt_3d_pred, kpt_3d_gt):
         loss1 = self.criterion1(heatmaps_pred, heatmaps_gt)
         loss2 = self.criterion2(kpt_3d_pred, kpt_3d_gt)
-        print(loss1.item(), loss2.item())
         losses = loss1 + loss2
         return losses
