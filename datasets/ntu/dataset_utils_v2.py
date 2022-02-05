@@ -1,13 +1,13 @@
-import os
+import glob
+import os.path as osp
 
 import cv2
 import numpy as np
 from PIL import Image, ImageEnhance, ImageOps
-from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from datasets.freihand.data_utils import cam_projection, init_pose3d_labels, read_data
+from datasets.ntu.data_utils import cam_projection, init_pose3d_labels, read_data
 
 
 def vector_to_heatmaps(keypoints, im_width, im_height, n_keypoints, model_img_size):
@@ -54,35 +54,47 @@ def heatmaps_to_coordinates(joint_heatmaps, model_img_size):
     return keypoints_norm
 
 
-def get_train_val_image_paths(data_dir, is_training, use_augmented, use_evaluation, test_size):
+def get_train_val_image_paths(image_dir, val_set_path, is_training):
+    """
+    get training or validation image paths
+    :param image_dir:
+    :param val_set_path:
+    :param train_val_flag:
+    :return:
+    """
+    val_cameras = []
+    with open(val_set_path) as reader:
+        for line in reader:
+            val_cameras.append(line.strip())
+    val_cameras = set(val_cameras)
+    lighting_folders = glob.glob(osp.join(image_dir, "l*"))
+
     image_paths = []
+    for lighting_folder in lighting_folders:
+        cam_folders = glob.glob(osp.join(lighting_folder, "cam*"))
+        for cam_folder in cam_folders:
+            cam_name = osp.basename(cam_folder)
+            if cam_name in [
+                "cam11",
+                "cam12",
+                "cam13",
+                "cam14",
+                "cam15",
+                "cam16",
+                "cam17",
+                "cam18",
+                "cam19",
+                "cam20",
+            ]:
+                continue
+            if is_training:
+                if cam_name not in val_cameras:
+                    image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
+            else:
+                if cam_name in val_cameras:
+                    image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
 
-    if use_augmented:
-        n_start, n_end = 0, 130239  # 32560
-        raise NotImplementedError
-    else:
-        n_start, n_end = 0, 32560
-        for idx in range(n_start, n_end):
-            image_paths.append(
-                (os.path.join(data_dir, "train", "training", "rgb", "%08d.jpg" % idx), idx, True)
-            )
-
-        if use_evaluation:
-            n_start, n_end = 0, 3960
-            for idx in range(n_start, n_end):
-                image_paths.append(
-                    (
-                        os.path.join(data_dir, "val", "evaluation", "rgb", "%08d.jpg" % idx),
-                        idx,
-                        False,
-                    )
-                )
-
-    train, test = train_test_split(image_paths, test_size=test_size, shuffle=True, random_state=42)
-    if is_training:
-        return train
-    else:
-        return test
+    return image_paths
 
 
 class HandPoseDataset(Dataset):
@@ -95,31 +107,26 @@ class HandPoseDataset(Dataset):
 
     def __init__(self, config, set_type="train"):
         self.device = config["training_details"]["device"]
+        self.camera_param_path = config["dataset"]["camera_param_file"]
+        self.global_pose3d_gt_path = config["dataset"]["global_pose3d_gt_file"]
+        self.global_mesh_gt_dir = config["dataset"]["global_mesh_gt_dir"]
         self.n_keypoints = config["model"]["n_keypoints"]
         self.raw_image_size = config["model"]["raw_image_size"]
         self.model_img_size = config["model"]["model_img_size"]
-        self.data_dir = config["dataset"]["data_dir"]
-        self.use_augmented = config["dataset"]["use_augmented"]
-        self.use_evaluation = config["dataset"]["use_evaluation"]
-        self.test_size = config["dataset"]["test_size"]
 
         self.is_training = set_type == "train"
 
-        self.all_camera_params_train, self.all_global_pose3d_gt_train = init_pose3d_labels(
-            self.data_dir, True
-        )
-        self.all_camera_params_val, self.all_global_pose3d_gt_val = init_pose3d_labels(
-            self.data_dir, False
-        )
-
+        self.data_dir = config["dataset"]["images_dir"]
+        self.val_cams_file = config["dataset"]["val_cams_file"]
+        # glob.glob(f"{self.data_dir}/**/*.png", recursive=True)
         self.image_names = get_train_val_image_paths(
-            self.data_dir,
-            is_training=self.is_training,
-            use_augmented=self.use_augmented,
-            use_evaluation=self.use_evaluation,
-            test_size=self.test_size,
+            self.data_dir, self.val_cams_file, is_training=self.is_training
         )
         print("Total Images:", len(self.image_names))
+
+        self.all_camera_params, self.all_global_pose3d_gt = init_pose3d_labels(
+            self.camera_param_path, self.global_pose3d_gt_path
+        )
 
         self.image_transform = transforms.Compose(
             [transforms.Resize(self.raw_image_size), transforms.ToTensor(),]
@@ -130,16 +137,14 @@ class HandPoseDataset(Dataset):
 
     def __getitem__(self, idx):
         # Get Labels
-        # image_idx, image_name, is_train_img = 327, "data/freihand/train/training/rgb/00019770.jpg", True
-        image_name, image_idx, is_train_img = self.image_names[idx]
-
-        cam_param, local_pose3d_gt = read_data(
-            image_idx,
-            is_train_img,
-            self.all_camera_params_train,
-            self.all_global_pose3d_gt_train,
-            self.all_camera_params_val,
-            self.all_global_pose3d_gt_val,
+        """
+        Close to the edge
+        data/synthetic_train_val/images/l01/cam05/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam05_.0235.png"
+        data/synthetic_train_val/images/l01/cam08/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l01_cam08_.0155.png"
+        """
+        image_name = self.image_names[idx]
+        (local_pose3d_gt, cam_param,) = read_data(
+            image_name, self.all_camera_params, self.all_global_pose3d_gt, self.global_mesh_gt_dir
         )
 
         drot = -1
@@ -160,10 +165,6 @@ class HandPoseDataset(Dataset):
             sharpness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
             is_mirror = True if np.random.rand() > 0.5 else False
             is_flip = True if np.random.rand() > 0.5 else False
-            image = ImageEnhance.Brightness(image).enhance(brightness_factor)
-            image = ImageEnhance.Contrast(image).enhance(contrast_factor)
-            image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
-            image = image.rotate(drot)
             z_rot = np.array(
                 [
                     [np.cos(np.deg2rad(drot)), -np.sin(np.deg2rad(drot)), 0],
@@ -171,7 +172,12 @@ class HandPoseDataset(Dataset):
                     [0, 0, 1],
                 ]
             )
+            fl = cam_param[0]  # focal length
             local_pose3d_gt = local_pose3d_gt @ z_rot
+            image = image.rotate(drot)
+            image = ImageEnhance.Brightness(image).enhance(brightness_factor)
+            image = ImageEnhance.Contrast(image).enhance(contrast_factor)
+            image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
 
             if is_mirror:
                 image = ImageOps.mirror(image)
@@ -181,16 +187,18 @@ class HandPoseDataset(Dataset):
                 image = ImageOps.flip(image)
                 local_pose3d_gt[:, 1] = -local_pose3d_gt[:, 1]
 
+        # Get 2D Poses
+        fl = cam_param[0]  # focal length
+        cam_proj_mat = np.array(
+            [[fl, 0.0, im_width / 2.0], [0.0, fl, im_height / 2.0], [0.0, 0.0, 1.0]]
+        )
+        kpt_2d_gt = cam_projection(local_pose3d_gt, cam_proj_mat)
+
         # Preprocess
         image_inp = self.image_transform(image)
-        kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
-        try:
-            heatmaps_gt, _ = vector_to_heatmaps(
-                kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
-            )
-        except:
-            print(idx, image_name)
-            raise
+        heatmaps_gt, _ = vector_to_heatmaps(
+            kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
+        )
         kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] / im_width
         kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] / im_height
         kpt_3d_gt = local_pose3d_gt
