@@ -4,6 +4,7 @@ import os.path as osp
 import cv2
 import numpy as np
 from PIL import Image, ImageEnhance, ImageOps
+from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision import transforms
 
@@ -54,7 +55,7 @@ def heatmaps_to_coordinates(joint_heatmaps, model_img_size):
     return keypoints_norm
 
 
-def get_train_val_image_paths(image_dir, val_set_path, is_training):
+def get_train_val_image_paths(image_dir, val_set_path, test_size, is_training):
     """
     get training or validation image paths
     :param image_dir:
@@ -67,34 +68,19 @@ def get_train_val_image_paths(image_dir, val_set_path, is_training):
         for line in reader:
             val_cameras.append(line.strip())
     val_cameras = set(val_cameras)
-    lighting_folders = glob.glob(osp.join(image_dir, "l*"))
+    lighting_folders = ["data/synthetic_train_val/images/l01"]
 
     image_paths = []
     for lighting_folder in lighting_folders:
         cam_folders = glob.glob(osp.join(lighting_folder, "cam*"))
         for cam_folder in cam_folders:
-            cam_name = osp.basename(cam_folder)
-            if cam_name in [
-                "cam11",
-                "cam12",
-                "cam13",
-                "cam14",
-                "cam15",
-                "cam16",
-                "cam17",
-                "cam18",
-                "cam19",
-                "cam20",
-            ]:
-                continue
-            if is_training:
-                if cam_name not in val_cameras:
-                    image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
-            else:
-                if cam_name in val_cameras:
-                    image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
+            image_paths.extend(glob.glob(f"{cam_folder}/*.png"))
 
-    return image_paths
+    train, test = train_test_split(image_paths, test_size=test_size, shuffle=True, random_state=42)
+    if is_training:
+        return train
+    else:
+        return test
 
 
 class HandPoseDataset(Dataset):
@@ -110,6 +96,7 @@ class HandPoseDataset(Dataset):
         self.camera_param_path = config["dataset"]["camera_param_file"]
         self.global_pose3d_gt_path = config["dataset"]["global_pose3d_gt_file"]
         self.global_mesh_gt_dir = config["dataset"]["global_mesh_gt_dir"]
+        self.test_size = config["dataset"]["test_size"]
         self.n_keypoints = config["model"]["n_keypoints"]
         self.raw_image_size = config["model"]["raw_image_size"]
         self.model_img_size = config["model"]["model_img_size"]
@@ -120,7 +107,10 @@ class HandPoseDataset(Dataset):
         self.val_cams_file = config["dataset"]["val_cams_file"]
         # glob.glob(f"{self.data_dir}/**/*.png", recursive=True)
         self.image_names = get_train_val_image_paths(
-            self.data_dir, self.val_cams_file, is_training=self.is_training
+            self.data_dir,
+            self.val_cams_file,
+            test_size=self.test_size,
+            is_training=self.is_training,
         )
         print("Total Images:", len(self.image_names))
 
