@@ -122,6 +122,8 @@ class TestDataset:
             kpt_2d_gt = data["kpt_2d_gt"].to(torch.device(self.config["test"]["device"]))
             kpt_3d_gt = data["kpt_3d_gt"].to(torch.device(self.config["test"]["device"]))
             drot = data["drot"].to(torch.device(self.config["test"]["device"]))
+            dx = data["dx"].to(torch.device(self.config["test"]["device"]))
+            dy = data["dy"].to(torch.device(self.config["test"]["device"]))
             brightness_factor = data["brightness_factor"].to(
                 torch.device(self.config["test"]["device"])
             )
@@ -140,6 +142,8 @@ class TestDataset:
             heatmaps_gt = heatmaps_gt.cpu().numpy()[0]
             kpt_3d_gt = kpt_3d_gt.cpu().numpy()[0]
             drot = drot.cpu().numpy()[0]
+            dx = dx.cpu().numpy()[0]
+            dy = dy.cpu().numpy()[0]
             brightness_factor = brightness_factor.cpu().numpy()[0]
             contrast_factor = contrast_factor.cpu().numpy()[0]
             sharpness_factor = sharpness_factor.cpu().numpy()[0]
@@ -155,6 +159,10 @@ class TestDataset:
                 image_name,
                 "drot:",
                 drot,
+                "dx:",
+                dx,
+                "dy:",
+                dy,
                 "brightness_factor:",
                 brightness_factor,
                 "contrast_factor:",
@@ -170,6 +178,7 @@ class TestDataset:
             image = Image.open(image_name).convert("RGB")
             if drot != -1:
                 image = image.rotate(drot)
+                image = image.transform(image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
                 image = ImageEnhance.Brightness(image).enhance(brightness_factor)
                 image = ImageEnhance.Contrast(image).enhance(contrast_factor)
                 image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)

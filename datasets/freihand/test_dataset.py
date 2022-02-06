@@ -128,6 +128,8 @@ class TestDataset:
             kpt_2d_gt = data["kpt_2d_gt"].to(torch.device(self.config["test"]["device"]))
             kpt_3d_gt = data["kpt_3d_gt"].to(torch.device(self.config["test"]["device"]))
             drot = data["drot"].to(torch.device(self.config["test"]["device"]))
+            dx = data["dx"].to(torch.device(self.config["test"]["device"]))
+            dy = data["dy"].to(torch.device(self.config["test"]["device"]))
             brightness_factor = data["brightness_factor"].to(
                 torch.device(self.config["test"]["device"])
             )
@@ -150,6 +152,8 @@ class TestDataset:
                 heatmaps_gt, self.config["model"]["model_img_size"]
             )
             drot = drot.cpu().numpy()[0]
+            dx = dx.cpu().numpy()[0]
+            dy = dy.cpu().numpy()[0]
             brightness_factor = brightness_factor.cpu().numpy()[0]
             contrast_factor = contrast_factor.cpu().numpy()[0]
             sharpness_factor = sharpness_factor.cpu().numpy()[0]
@@ -161,6 +165,10 @@ class TestDataset:
                 image_name,
                 "drot:",
                 drot,
+                "dx:",
+                dx,
+                "dy:",
+                dy,
                 "brightness_factor:",
                 brightness_factor,
                 "contrast_factor:",
@@ -179,6 +187,7 @@ class TestDataset:
                 image = ImageEnhance.Contrast(image).enhance(contrast_factor)
                 image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
                 image = image.rotate(drot)
+                image = image.transform(image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
                 if is_mirror:
                     image = ImageOps.mirror(image)
                 if is_flip:

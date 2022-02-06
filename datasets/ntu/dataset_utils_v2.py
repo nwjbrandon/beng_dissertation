@@ -32,6 +32,10 @@ def vector_to_heatmaps(keypoints, im_width, im_height, n_keypoints, model_img_si
         heatmap = compute_heatmap(x, y, model_img_size)
         heatmaps[k] = heatmap
         visibility_vector[k] = 1
+        # if x >= 0 and x <= 1 and y >= 0 and y <= 1:
+        #     heatmap = compute_heatmap(x, y, model_img_size)
+        #     heatmaps[k] = heatmap
+        #     visibility_vector[k] = 1
 
     return heatmaps, visibility_vector
 
@@ -153,6 +157,8 @@ class HandPoseDataset(Dataset):
         )
 
         drot = -1
+        dx = -1
+        dy = -1
         brightness_factor = -1
         contrast_factor = -1
         sharpness_factor = -1
@@ -165,9 +171,14 @@ class HandPoseDataset(Dataset):
 
         if self.is_training:
             drot = np.random.choice([0, 90, 180, 270])
-            brightness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
-            contrast_factor = 1 + np.random.rand() * 4 / 10 - 0.2
-            sharpness_factor = 1 + np.random.rand() * 4 / 10 - 0.2
+            dx = 0
+            dy = 0
+            # drot = np.random.rand() * 360
+            # dx = int(np.random.rand() * 100) - 50
+            # dy = int(np.random.rand() * 100) - 50
+            brightness_factor = 1 + np.random.rand() * 5 / 10 - 0.25
+            contrast_factor = 1 + np.random.rand() * 5 / 10 - 0.25
+            sharpness_factor = 1 + np.random.rand() * 5 / 10 - 0.25
             is_mirror = True if np.random.rand() > 0.5 else False
             is_flip = True if np.random.rand() > 0.5 else False
             z_rot = np.array(
@@ -179,7 +190,10 @@ class HandPoseDataset(Dataset):
             )
             fl = cam_param[0]  # focal length
             local_pose3d_gt = local_pose3d_gt @ z_rot
+            local_pose3d_gt[:, 0] = local_pose3d_gt[:, 0] - dx / fl * local_pose3d_gt[:, 2]
+            local_pose3d_gt[:, 1] = local_pose3d_gt[:, 1] - dy / fl * local_pose3d_gt[:, 2]
             image = image.rotate(drot)
+            image = image.transform(image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
             image = ImageEnhance.Brightness(image).enhance(brightness_factor)
             image = ImageEnhance.Contrast(image).enhance(contrast_factor)
             image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
@@ -215,6 +229,8 @@ class HandPoseDataset(Dataset):
             "kpt_2d_gt": kpt_2d_gt,  # 2d to 3d
             "kpt_3d_gt": kpt_3d_gt,  # 2d to 3d
             "drot": drot,
+            "dx": dx,
+            "dy": dy,
             "brightness_factor": brightness_factor,
             "contrast_factor": contrast_factor,
             "sharpness_factor": sharpness_factor,
