@@ -273,3 +273,13 @@ def resnet18(pretrained: bool = False, progress: bool = True) -> ResNet:
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     return _resnet("resnet18", BasicBlock, [2, 2, 2, 2])
+
+
+def resnet34(pretrained: bool = False, progress: bool = True,) -> ResNet:
+    r"""ResNet-34 model from
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _resnet("resnet34", BasicBlock, [3, 4, 6, 3])

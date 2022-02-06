@@ -2,7 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 import torch
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 from torch.utils.data import DataLoader
 
 from datasets.freihand.data_utils import draw_2d_skeleton, draw_3d_skeleton_on_ax, visualize_data
@@ -128,6 +128,8 @@ class TestDataset:
             kpt_2d_gt = data["kpt_2d_gt"].to(torch.device(self.config["test"]["device"]))
             kpt_3d_gt = data["kpt_3d_gt"].to(torch.device(self.config["test"]["device"]))
             drot = data["drot"].to(torch.device(self.config["test"]["device"]))
+            dx = data["dx"].to(torch.device(self.config["test"]["device"]))
+            dy = data["dy"].to(torch.device(self.config["test"]["device"]))
             brightness_factor = data["brightness_factor"].to(
                 torch.device(self.config["test"]["device"])
             )
@@ -137,6 +139,8 @@ class TestDataset:
             sharpness_factor = data["sharpness_factor"].to(
                 torch.device(self.config["test"]["device"])
             )
+            is_mirror = data["is_mirror"].to(torch.device(self.config["test"]["device"]))
+            is_flip = data["is_flip"].to(torch.device(self.config["test"]["device"]))
 
             # Assume heatmaps_gt is output of the model
             image_name = data["image_name"][0]
@@ -148,21 +152,33 @@ class TestDataset:
                 heatmaps_gt, self.config["model"]["model_img_size"]
             )
             drot = drot.cpu().numpy()[0]
+            dx = dx.cpu().numpy()[0]
+            dy = dy.cpu().numpy()[0]
             brightness_factor = brightness_factor.cpu().numpy()[0]
             contrast_factor = contrast_factor.cpu().numpy()[0]
             sharpness_factor = sharpness_factor.cpu().numpy()[0]
+            is_mirror = is_mirror.cpu().numpy()[0]
+            is_flip = is_flip.cpu().numpy()[0]
 
             print(
                 "name:",
                 image_name,
                 "drot:",
                 drot,
+                "dx:",
+                dx,
+                "dy:",
+                dy,
                 "brightness_factor:",
                 brightness_factor,
                 "contrast_factor:",
                 contrast_factor,
                 "sharpness_factor:",
                 sharpness_factor,
+                "is_mirror:",
+                is_mirror,
+                "is_flip:",
+                is_flip,
             )
             # Recover original 2d pose
             image = Image.open(image_name).convert("RGB")
@@ -171,6 +187,11 @@ class TestDataset:
                 image = ImageEnhance.Contrast(image).enhance(contrast_factor)
                 image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
                 image = image.rotate(drot)
+                image = image.transform(image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
+                if is_mirror:
+                    image = ImageOps.mirror(image)
+                if is_flip:
+                    image = ImageOps.flip(image)
 
             im_width, im_height = image.size
             kpt_2d_gt[:, 0] = kpt_2d_gt[:, 0] * im_width
@@ -199,8 +220,7 @@ class TestDataset:
 
             fig = plt.figure(figsize=(5, 5))
             ax = plt.axes(projection="3d")
-            kpt_3d_gt = kpt_3d_gt - kpt_3d_gt[0]
-            draw_3d_skeleton_on_ax(kpt_3d_gt * 10, ax)
+            draw_3d_skeleton_on_ax(kpt_3d_gt, ax)
             ax.set_title("GT 3D joints")
 
             plt.show()
