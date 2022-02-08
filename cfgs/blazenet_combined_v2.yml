@@ -18,10 +18,10 @@ dataset:
     dataset_name: datasets.ntu.dataset_utils_v2.HandPoseDataset
     test_size: 0.1
 training_details:
-  trainer: "trainers.blazenet_trainer.Pose2DTrainer"
+  trainer: trainers.blazenet_trainer.Pose2DTrainer
   epochs: 10000
   batch_size: 32
-  optimizer: "torch.optim.Adam"
+  optimizer: torch.optim.Adam
   learning_rate: 0.01
   num_workers: 8
   shuffle: True
@@ -34,13 +34,13 @@ training_details:
   loss_file: exp/loss_info.txt
   model_file: exp/model
 model:
-  model_name: "models.blazenet_model_v4.Pose2dModel"
+  model_name: models.blazenet_model_v4.Pose2dModel
   model_file: ""
   n_keypoints: 21
   raw_image_size: 256
   model_img_size: 64
 test:
   test_class: datasets.freihand.test_dataset.TestDataset
-  model_file: exp/model_2.pth
+  model_file: exp/model_1.pth
   device: cpu
   dataset_name: freihand

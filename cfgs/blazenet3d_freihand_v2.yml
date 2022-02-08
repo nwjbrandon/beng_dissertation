@@ -8,30 +8,30 @@ dataset:
   use_evaluation: True
   test_size: 0.1
 training_details:
-  trainer: "trainers.blazenet3d_trainer.Pose3DTrainer"
+  trainer: trainers.blazenet3d_trainer.Pose3DTrainer
   epochs: 10000
-  batch_size: 2
-  optimizer: "torch.optim.Adam"
+  batch_size: 32
+  optimizer: torch.optim.Adam
   learning_rate: 0.01
-  num_workers: 1
+  num_workers: 8
   shuffle: True
   scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
   scheduler_factor: 0.5
   scheduler_patience: 5
   scheduler_verbose: True
   scheduler_threshold: 0.0001
-  device: cpu
+  device: cuda
   loss_file: exp/loss_info.txt
   model_file: exp/model
-  is_freeze_pose2d: True
+  is_freeze_pose2d: False
 model:
-  model_name: "models.blazenet_model_3d_v2.Pose3dModel"
+  model_name: models.blazenet_model_3d_v2.Pose3dModel
   model_file: ""
   n_keypoints: 21
   raw_image_size: 256
   model_img_size: 64
 test:
   test_class: datasets.freihand.test_dataset.TestDataset
-  model_file: exp/model_2.pth
+  model_file: exp/model_1.pth
   device: cpu
   dataset_name: freihand
