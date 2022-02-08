@@ -193,102 +193,23 @@ class Regressor3d(nn.Module):
     def __init__(self, config):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
+        self.conv11 = DownConv(85, 32)
+        self.conv12 = DownConv(160, 64)
+        self.conv13 = DownConv(320, 192)
+        self.conv14 = DownConv(704, 21)
+        self.flat = nn.Flatten(start_dim=2)
 
-        self.A_0 = Parameter(torch.eye(21).float(), requires_grad=True)
-        self.flat0 = nn.Flatten()
-        self.gconv0 = GraphConv(86016, 2)
-        self.gpool0 = GraphPool(21, 15)
-
-        self.A_1 = Parameter(torch.eye(21).float(), requires_grad=True)
-        self.flat1 = nn.Flatten()
-        self.gconv1 = GraphConv(32768, 1024)
-        self.gpool1 = GraphPool(21, 15)
-
-        self.A_2 = Parameter(torch.eye(15).float(), requires_grad=True)
-        self.gconv2 = GraphConv(1026, 512)
-        self.gpool2 = GraphPool(15, 7)
-
-        self.A_3 = Parameter(torch.eye(7).float(), requires_grad=True)
-        self.gconv3 = GraphConv(512, 256)
-        self.gpool3 = GraphPool(7, 4)
-
-        self.A_4 = Parameter(torch.eye(4).float(), requires_grad=True)
-        self.gconv4 = GraphConv(256, 128)
-        self.gpool4 = GraphPool(4, 2)
-
-        self.A_5 = Parameter(torch.eye(2).float(), requires_grad=True)
-        self.gconv5 = GraphConv(128, 64)
-        self.gpool5 = GraphPool(2, 1)
-
-        self.fc1 = nn.Linear(64, 32)
-        self.act1 = nn.Tanh()
-        self.fc2 = nn.Linear(32, 64)
-        self.act2 = nn.Tanh()
-
-        self.A_6 = Parameter(torch.eye(2).float(), requires_grad=True)
-        self.gpool6 = GraphUnpool(1, 2)
-        self.gconv6 = GraphConv(192, 32)
-
-        self.A_7 = Parameter(torch.eye(4).float(), requires_grad=True)
-        self.gpool7 = GraphUnpool(2, 4)
-        self.gconv7 = GraphConv(288, 16)
-
-        self.A_8 = Parameter(torch.eye(7).float(), requires_grad=True)
-        self.gpool8 = GraphUnpool(4, 7)
-        self.gconv8 = GraphConv(528, 8)
-
-        self.A_9 = Parameter(torch.eye(15).float(), requires_grad=True)
-        self.gpool9 = GraphUnpool(7, 15)
-        self.gconv9 = GraphConv(1032, 4)
-
-        self.A_10 = Parameter(torch.eye(21).float(), requires_grad=True)
-        self.gpool10 = GraphUnpool(15, 21)
-        self.gconv10 = GraphConv(4, 3)
+        self.A_0 = Parameter(torch.eye(21, dtype=torch.float), requires_grad=True)
+        self.gconv0 = GraphConv(16, 3)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
-        x0 = self.flat0(heatmaps).unsqueeze(1).repeat(1, 21, 1)
-        x0 = self.gconv0(x0, self.A_0)
-        x0 = self.gpool0(x0)
-
-        x1 = self.flat1(out5).unsqueeze(1).repeat(1, 21, 1)
-        x1 = self.gconv1(x1, self.A_1)
-        x1 = self.gpool1(x1)
-
-        x01 = torch.cat([x0, x1], dim=2)
-        x2 = self.gconv2(x01, self.A_2)
-        x2 = self.gpool2(x2)
-
-        x3 = self.gconv3(x2, self.A_3)
-        x3 = self.gpool3(x3)
-
-        x4 = self.gconv4(x3, self.A_4)
-        x4 = self.gpool4(x4)
-
-        x5 = self.gconv5(x4, self.A_5)
-        x5 = self.gpool5(x5)
-
-        feat = self.act1(self.fc1(x5))
-        feat = self.act2(self.fc2(feat))
-
-        x6 = self.gpool6(feat)
-        x46 = torch.cat([x4, x6], dim=2)
-        x6 = self.gconv6(x46, self.A_6)
-
-        x7 = self.gpool7(x6)
-        x37 = torch.cat([x3, x7], dim=2)
-        x7 = self.gconv7(x37, self.A_7)
-
-        x8 = self.gpool8(x7)
-        x28 = torch.cat([x2, x8], dim=2)
-        x8 = self.gconv8(x28, self.A_8)
-
-        x9 = self.gpool9(x8)
-        x19 = torch.cat([x1, x9], dim=2)
-        x9 = self.gconv9(x19, self.A_9)
-
-        x10 = self.gpool10(x9)
-        x10 = self.gconv10(x10, self.A_10)
-        return x10
+        out11 = self.conv11(torch.cat([heatmaps, out2], dim=1))
+        out12 = self.conv12(torch.cat([out11, out3], dim=1))
+        out13 = self.conv13(torch.cat([out12, out4], dim=1))
+        out14 = self.conv14(torch.cat([out13, out5], dim=1))
+        feat = self.flat(out14)
+        kpt_3d = self.gconv0(feat, self.A_0)
+        return kpt_3d
 
 
 class Pose3dModel(nn.Module):
