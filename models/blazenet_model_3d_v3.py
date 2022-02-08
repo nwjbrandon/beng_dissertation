@@ -1,8 +1,59 @@
 import torch
-import torch.nn as nn
+from torch import nn
 
 from models.resnet import resnet18
-from models.semgcn import HAND_ADJ, _GraphConv, _ResGraphConv
+from models.semgcn import _GraphConv, _ResGraphConv, adj_mx_from_edges
+
+N_JOINTS = 21
+
+HAND_JOINTS_PARENTS = [
+    -1,
+    0,
+    1,
+    2,
+    3,
+    0,
+    5,
+    6,
+    7,
+    0,
+    9,
+    10,
+    11,
+    0,
+    13,
+    14,
+    15,
+    0,
+    17,
+    18,
+    19,
+]
+HAND_EDGES = list(filter(lambda x: x[1] >= 0, zip(list(range(0, N_JOINTS)), HAND_JOINTS_PARENTS)))
+ADDITIONAL_EDGES = [
+    (1, 5),
+    (5, 9),
+    (9, 13),
+    (13, 17),
+    (1, 17),
+    (2, 6),
+    (6, 10),
+    (10, 14),
+    (14, 18),
+    (2, 18),
+    (3, 7),
+    (7, 11),
+    (11, 15),
+    (15, 19),
+    (3, 19),
+    (4, 8),
+    (8, 12),
+    (12, 16),
+    (16, 20),
+    (4, 20),
+]
+HAND_EDGES.extend(ADDITIONAL_EDGES)
+HAND_ADJ = adj_mx_from_edges(N_JOINTS, HAND_EDGES, sparse=False)
 
 
 class Conv(nn.Module):
@@ -145,47 +196,31 @@ class Regressor3d(nn.Module):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
 
-        # out4
-        self.flat3 = nn.Flatten()
-        self.gconv3 = _GraphConv(HAND_ADJ, 65536, 256, p_dropout=0.0)
+        # cnn
+        self.conv11 = DownConv(85, 32)
+        self.conv12 = DownConv(160, 64)
+        self.conv13 = DownConv(320, 192)
+        self.conv14 = ConvBn(704, 21, kernel_size=3, stride=1, padding=1,)
+        self.flat = nn.Flatten(start_dim=2)
 
-        self.resgconv3 = _ResGraphConv(HAND_ADJ, 256, 256, 128, p_dropout=0.0)
-
-        # out5
-        self.flat4 = nn.Flatten()
-        self.gconv4 = _GraphConv(HAND_ADJ, 32768, 256, p_dropout=0.0)
-
-        self.resgconv4 = _ResGraphConv(HAND_ADJ, 256, 256, 128, p_dropout=0.0)
-
-        # backbone
-        self.gconv5 = _GraphConv(HAND_ADJ, 512, 256, p_dropout=0.0)
-
-        self.resgconv5 = _ResGraphConv(HAND_ADJ, 256, 256, 128, p_dropout=0.0)
-
-        self.resgconv6 = _ResGraphConv(HAND_ADJ, 256, 256, 128, p_dropout=0.0)
-
+        # gcn
+        self.gconv15 = _GraphConv(HAND_ADJ, 64, 256, p_dropout=0.0)
+        self.gconv16 = _ResGraphConv(HAND_ADJ, 256, 256, 128, p_dropout=0.0)
+        self.gconv17 = _ResGraphConv(HAND_ADJ, 256, 256, 128, p_dropout=0.0)
         self.gconvout = _GraphConv(HAND_ADJ, 256, 3, p_dropout=0.0)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
-        x3 = self.flat3(out4).unsqueeze(1).repeat(1, 21, 1)
-        x3 = self.gconv3(x3)
-        x3 = self.resgconv3(x3)
+        out11 = self.conv11(torch.cat([heatmaps, out2], dim=1))
+        out12 = self.conv12(torch.cat([out11, out3], dim=1))
+        out13 = self.conv13(torch.cat([out12, out4], dim=1))
+        out14 = self.conv14(torch.cat([out13, out5], dim=1))
+        feat = self.flat(out14)
 
-        x4 = self.flat4(out5).unsqueeze(1).repeat(1, 21, 1)
-        x4 = self.gconv4(x4)
-        x4 = self.resgconv4(x4)
-
-        # feat = torch.cat([x0, x1, x2, x3, x4], dim=2)
-        feat = torch.cat([x3, x4], dim=2)
-
-        feat = self.gconv5(feat)
-
-        feat = self.resgconv5(feat)
-        feat = self.resgconv6(feat)
-
-        out = self.gconvout(feat)
-
-        return out
+        out15 = self.gconv15(feat)
+        out16 = self.gconv16(out15)
+        out17 = self.gconv17(out16)
+        kpt_3d = self.gconvout(out17)
+        return kpt_3d
 
 
 class Pose3dModel(nn.Module):
