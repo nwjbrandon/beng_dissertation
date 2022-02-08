@@ -6,55 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-N_JOINTS = 21
-
-HAND_JOINTS_PARENTS = [
-    -1,
-    0,
-    1,
-    2,
-    3,
-    0,
-    5,
-    6,
-    7,
-    0,
-    9,
-    10,
-    11,
-    0,
-    13,
-    14,
-    15,
-    0,
-    17,
-    18,
-    19,
-]
-HAND_EDGES = list(filter(lambda x: x[1] >= 0, zip(list(range(0, N_JOINTS)), HAND_JOINTS_PARENTS)))
-ADDITIONAL_EDGES = [
-    (1, 5),
-    (5, 9),
-    (9, 13),
-    (13, 17),
-    (1, 17),
-    (2, 6),
-    (6, 10),
-    (10, 14),
-    (14, 18),
-    (2, 18),
-    (3, 7),
-    (7, 11),
-    (11, 15),
-    (15, 19),
-    (3, 19),
-    (4, 8),
-    (8, 12),
-    (12, 16),
-    (16, 20),
-    (4, 20),
-]
-
 
 def normalize(mx):
     """Row-normalize sparse matrix"""
@@ -67,7 +18,6 @@ def normalize(mx):
 
 
 def adj_mx_from_edges(num_pts, edges, sparse=True):
-    edges.extend(ADDITIONAL_EDGES)
     edges = np.array(edges, dtype=np.int32)
     data, i, j = np.ones(edges.shape[0]), edges[:, 0], edges[:, 1]
     adj_mx = sp.coo_matrix((data, (i, j)), shape=(num_pts, num_pts), dtype=np.float32)
@@ -78,9 +28,6 @@ def adj_mx_from_edges(num_pts, edges, sparse=True):
     adj_mx = normalize(adj_mx + sp.eye(adj_mx.shape[0]))
     adj_mx = torch.tensor(adj_mx.todense(), dtype=torch.float)
     return adj_mx
-
-
-HAND_ADJ = adj_mx_from_edges(N_JOINTS, HAND_EDGES, sparse=False)
 
 
 class SemGraphConv(nn.Module):
