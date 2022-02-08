@@ -40,12 +40,16 @@ class TestDataset:
                 image_name = data["image_name"]
                 image_inp = data["image_inp"]
                 heatmaps_gt = data["heatmaps_gt"]
+                kpt_3d_gt = data["kpt_3d_gt"]
                 image_inp = image_inp.to(torch.device(self.config["test"]["device"]))
                 heatmaps_gt = heatmaps_gt.to(torch.device(self.config["test"]["device"]))
+                kpt_3d_gt = kpt_3d_gt.to(torch.device(self.config["test"]["device"]))
 
-                heatmaps_pred = model(image_inp)
-                heatmaps_pred = heatmaps_pred[0].numpy()[0]
+                pred = model(image_inp)
+                heatmaps_pred = pred[0].numpy()[0]
                 heatmaps_gt = heatmaps_gt.numpy()[0]
+                kpt_3d_pred = pred[1].numpy()[0]
+                kpt_3d_gt = kpt_3d_gt.numpy()[0]
 
                 kpt_2d_pred = heatmaps_to_coordinates(
                     heatmaps_pred, self.config["model"]["model_img_size"]
@@ -69,6 +73,16 @@ class TestDataset:
                     fig.add_subplot(5, 5, j + 1)
                     plt.title(f"kpt {j}")
                     plt.imshow(heatmaps_gt[j])
+
+                fig = plt.figure(figsize=(5, 5))
+                ax = plt.axes(projection="3d")
+                draw_3d_skeleton_on_ax(kpt_3d_gt, ax)
+                ax.set_title("GT 3D joints")
+
+                fig = plt.figure(figsize=(5, 5))
+                ax = plt.axes(projection="3d")
+                draw_3d_skeleton_on_ax(kpt_3d_pred, ax)
+                ax.set_title("Pred 3D joints")
 
                 plt.show()
 
