@@ -207,7 +207,7 @@ class Regressor3d(nn.Module):
         out12 = self.conv12(torch.cat([out11, out3], dim=1))
         out13 = self.conv13(torch.cat([out12, out4], dim=1))
         out14 = self.conv14(torch.cat([out13, out5], dim=1))
-        feat = out14.reshape(B, self.out_channels, -1)
+        feat = out14.view(B, self.out_channels, -1)
         kpt_3d = self.gconv0(feat, self.A_0)
         return kpt_3d
 
