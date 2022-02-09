@@ -199,14 +199,15 @@ class Regressor3d(nn.Module):
         self.conv13 = DownConv(320, 192)
         self.conv14 = DownConv(704, 210)
         self.A_0 = Parameter(torch.eye(21, dtype=torch.float), requires_grad=True)
-        self.gconv0 = GraphConv(16, 3)
+        self.gconv0 = GraphConv(160, 3)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
+        B, _, _, _ = heatmaps.shape
         out11 = self.conv11(torch.cat([heatmaps, out2], dim=1))
         out12 = self.conv12(torch.cat([out11, out3], dim=1))
         out13 = self.conv13(torch.cat([out12, out4], dim=1))
         out14 = self.conv14(torch.cat([out13, out5], dim=1))
-        feat = out14.reshape(self.batch_size, self.out_channels, -1)
+        feat = out14.reshape(B, self.out_channels, -1)
         kpt_3d = self.gconv0(feat, self.A_0)
         return kpt_3d
 
