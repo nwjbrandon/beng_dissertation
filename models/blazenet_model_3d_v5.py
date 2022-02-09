@@ -204,11 +204,13 @@ class Regressor3d(nn.Module):
         self.gconv0 = GraphConv(3072, 3)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
+        B, _, _, _ = heatmaps.shape
         out11 = self.conv11(torch.cat([heatmaps, out2], dim=1))
         out12 = self.conv12(torch.cat([out11, out3], dim=1))
         out13 = self.conv13(torch.cat([out12, out4], dim=1))
         out14 = self.conv14(torch.cat([out13, out5], dim=1))
-        feat = self.flat(out14).unsqueeze(1)
+        feat = self.flat(out14)
+        feat = feat.view(B, -1, feat.size(1))
         out15 = self.pool15(feat)
         kpt_3d = self.gconv0(out15, self.A_0)
         return kpt_3d
