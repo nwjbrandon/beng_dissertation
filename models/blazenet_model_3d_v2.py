@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 from models.resnet import resnet18
-from models.semgcn import _GraphConv, _ResGraphConv, adj_mx_from_edges
+from models.semgcn import _GraphConv, adj_mx_from_edges
 
 N_JOINTS = 21
 
@@ -200,14 +200,11 @@ class Regressor3d(nn.Module):
         self.conv11 = DownConv(85, 32)
         self.conv12 = DownConv(160, 64)
         self.conv13 = DownConv(320, 192)
-        self.conv14 = DownConv(704, 192)
-        self.flat = nn.Flatten()
+        self.conv14 = DownConv(704, 21)
+        self.flat = nn.Flatten(start_dim=2)
 
         # gcn
-        self.gconv15 = _GraphConv(HAND_ADJ, 3072, 256, p_dropout=0.0)
-        self.gconv16 = _ResGraphConv(HAND_ADJ, 256, 256, 128, p_dropout=0.0)
-        self.gconv17 = _ResGraphConv(HAND_ADJ, 256, 256, 128, p_dropout=0.0)
-        self.gconvout = _GraphConv(HAND_ADJ, 256, 3, p_dropout=0.0)
+        self.gconvout = _GraphConv(HAND_ADJ, 16, 3, p_dropout=0.0)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
         out11 = self.conv11(torch.cat([heatmaps, out2], dim=1))
@@ -215,12 +212,7 @@ class Regressor3d(nn.Module):
         out13 = self.conv13(torch.cat([out12, out4], dim=1))
         out14 = self.conv14(torch.cat([out13, out5], dim=1))
         feat = self.flat(out14)
-        feat = feat.unsqueeze(1).repeat(1, self.out_channels, 1)
-
-        out15 = self.gconv15(feat)
-        out16 = self.gconv16(out15)
-        out17 = self.gconv17(out16)
-        kpt_3d = self.gconvout(out17)
+        kpt_3d = self.gconvout(feat)
         return kpt_3d
 
 
