@@ -2,35 +2,6 @@ import torch
 from torch import nn
 
 from models.resnet import resnet18
-from models.semgcn import _GraphConv, adj_mx_from_edges
-
-N_JOINTS = 21
-
-HAND_JOINTS_PARENTS = [
-    -1,
-    0,
-    1,
-    2,
-    3,
-    0,
-    5,
-    6,
-    7,
-    0,
-    9,
-    10,
-    11,
-    0,
-    13,
-    14,
-    15,
-    0,
-    17,
-    18,
-    19,
-]
-HAND_EDGES = list(filter(lambda x: x[1] >= 0, zip(list(range(0, N_JOINTS)), HAND_JOINTS_PARENTS)))
-HAND_ADJ = adj_mx_from_edges(N_JOINTS, HAND_EDGES, sparse=False)
 
 
 class Conv(nn.Module):
@@ -172,24 +143,24 @@ class Regressor3d(nn.Module):
     def __init__(self, config):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
-
-        # cnn
         self.conv11 = DownConv(85, 32)
         self.conv12 = DownConv(160, 64)
         self.conv13 = DownConv(320, 192)
-        self.conv14 = DownConv(704, 21)
-        self.flat = nn.Flatten(start_dim=2)
-
-        # gcn
-        self.gconvout = _GraphConv(HAND_ADJ, 16, 3, p_dropout=0.0)
+        self.conv14 = DownConv(704, 192)
+        self.flat = nn.Flatten()
+        self.fc = nn.Linear(3072, self.out_channels * 3)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
         out11 = self.conv11(torch.cat([heatmaps, out2], dim=1))
         out12 = self.conv12(torch.cat([out11, out3], dim=1))
         out13 = self.conv13(torch.cat([out12, out4], dim=1))
         out14 = self.conv14(torch.cat([out13, out5], dim=1))
-        feat = self.flat(out14)
-        kpt_3d = self.gconvout(feat)
+        x = self.flat(out14)
+        kpt_3d = self.fc(x)
+
+        # reshape
+        B, _ = kpt_3d.shape
+        kpt_3d = kpt_3d.view((B, self.out_channels, -1))
         return kpt_3d
 
 

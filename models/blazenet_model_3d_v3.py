@@ -1,8 +1,36 @@
 import torch
-import torch.nn as nn
-from torch.nn.parameter import Parameter
+from torch import nn
 
 from models.resnet import resnet18
+from models.semgcn import SemGraphConv, _GraphConv, _ResGraphConv, adj_mx_from_edges
+
+N_JOINTS = 21
+
+HAND_JOINTS_PARENTS = [
+    -1,
+    0,
+    1,
+    2,
+    3,
+    0,
+    5,
+    6,
+    7,
+    0,
+    9,
+    10,
+    11,
+    0,
+    13,
+    14,
+    15,
+    0,
+    17,
+    18,
+    19,
+]
+HAND_EDGES = list(filter(lambda x: x[1] >= 0, zip(list(range(0, N_JOINTS)), HAND_JOINTS_PARENTS)))
+HAND_ADJ = adj_mx_from_edges(N_JOINTS, HAND_EDGES, sparse=False)
 
 
 class Conv(nn.Module):
@@ -140,75 +168,37 @@ class Pose2dModel(nn.Module):
         return heatmaps, out2, out3, out4, out5
 
 
-class GraphConv(nn.Module):
-    def __init__(self, in_features, out_features):
-        super(GraphConv, self).__init__()
-        self.fc = nn.Linear(in_features=in_features, out_features=out_features)
-        self.act = nn.Tanh()
-
-    def laplacian(self, A_hat):
-        D_hat = (torch.sum(A_hat, 0) + 1e-5) ** (-0.5)
-        L = D_hat * A_hat * D_hat
-        return L
-
-    def laplacian_batch(self, A_hat):
-        batch, N = A_hat.shape[:2]
-        D_hat = (torch.sum(A_hat, 1) + 1e-5) ** (-0.5)
-        L = D_hat.view(batch, N, 1) * A_hat * D_hat.view(batch, 1, N)
-        return L
-
-    def forward(self, X, A):
-        batch = X.size(0)
-        A_hat = A.unsqueeze(0).repeat(batch, 1, 1)
-        X = self.fc(torch.bmm(self.laplacian_batch(A_hat), X))
-        X = self.act(X)
-        return X
-
-
-class GraphPool(nn.Module):
-    def __init__(self, in_nodes, out_nodes):
-        super(GraphPool, self).__init__()
-        self.fc = nn.Linear(in_features=in_nodes, out_features=out_nodes)
-
-    def forward(self, X):
-        X = X.transpose(1, 2)
-        X = self.fc(X)
-        X = X.transpose(1, 2)
-        return X
-
-
-class GraphUnpool(nn.Module):
-    def __init__(self, in_nodes, out_nodes):
-        super(GraphUnpool, self).__init__()
-        self.fc = nn.Linear(in_features=in_nodes, out_features=out_nodes)
-
-    def forward(self, X):
-        X = X.transpose(1, 2)
-        X = self.fc(X)
-        X = X.transpose(1, 2)
-        return X
-
-
 class Regressor3d(nn.Module):
     def __init__(self, config):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
+
+        # cnn
         self.conv11 = DownConv(85, 32)
         self.conv12 = DownConv(160, 64)
         self.conv13 = DownConv(320, 192)
-        self.conv14 = DownConv(704, 21)
-        self.flat = nn.Flatten(start_dim=2)
+        self.conv14 = DownConv(704, 210)
 
-        self.A_0 = Parameter(torch.eye(21, dtype=torch.float), requires_grad=True)
-        self.gconv0 = GraphConv(16, 3)
+        # gcn
+        self.gconv1 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
+        self.gconv2 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv3 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv4 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv5 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
+        B, _, _, _ = heatmaps.shape
         out11 = self.conv11(torch.cat([heatmaps, out2], dim=1))
         out12 = self.conv12(torch.cat([out11, out3], dim=1))
         out13 = self.conv13(torch.cat([out12, out4], dim=1))
         out14 = self.conv14(torch.cat([out13, out5], dim=1))
-        feat = self.flat(out14)
-        kpt_3d = self.gconv0(feat, self.A_0)
+        feat = out14.view(B, self.out_channels, -1)
+        out15 = self.gconv1(feat)
+        out16 = self.gconv2(out15)
+        out17 = self.gconv3(out16)
+        out18 = self.gconv4(out17)
+        kpt_3d = self.gconvout(out18)
         return kpt_3d
 
 
