@@ -101,6 +101,44 @@ def get_train_val_image_paths(image_dir, val_set_path, test_size, is_training):
 
     return image_paths
 
+def random_valid_drot_dx_dy(local_pose3d_gt, cam_param, im_width, im_height):
+    drot = 0
+    dx = 0
+    dy = 0
+
+    for _ in range(5):
+        drot = np.random.rand() * 360
+        dx = int(np.random.rand() * 200) - 100
+        dy = int(np.random.rand() * 200) - 100
+
+        z_rot = np.array(
+            [
+                [np.cos(np.deg2rad(drot)), -np.sin(np.deg2rad(drot)), 0],
+                [np.sin(np.deg2rad(drot)), np.cos(np.deg2rad(drot)), 0],
+                [0, 0, 1],
+            ]
+        )
+        local_pose3d_gt = local_pose3d_gt @ z_rot
+        fl = cam_param[0]
+        local_pose3d_gt[:, 0] = local_pose3d_gt[:, 0] - dx / fl * local_pose3d_gt[:, 2]
+        local_pose3d_gt[:, 1] = local_pose3d_gt[:, 1] - dy / fl * local_pose3d_gt[:, 2]
+        cam_proj_mat = np.array(
+            [[fl, 0.0, im_width / 2.0], [0.0, fl, im_height / 2.0], [0.0, 0.0, 1.0]]
+        )
+        kpt_2d_gt = cam_projection(local_pose3d_gt, cam_proj_mat)
+        keypoints_norm = kpt_2d_gt.copy()
+        keypoints_norm[:, 0] = keypoints_norm[:, 0] / im_width
+        keypoints_norm[:, 1] = keypoints_norm[:, 1] / im_height
+
+        if (
+            np.any(keypoints_norm[:, 0] < 1)
+            and np.any(keypoints_norm[:, 0] > 0)
+            and np.any(keypoints_norm[:, 1] < 1)
+            and np.any(keypoints_norm[:, 1] > 0)
+        ):
+            return drot, dx, dy
+    return 0, 0, 0
+
 
 class HandPoseDataset(Dataset):
     """
@@ -170,9 +208,12 @@ class HandPoseDataset(Dataset):
         im_width, im_height = image.size
 
         if self.is_training:
-            drot = np.random.choice([0, 90, 180, 270])
-            dx = 0
-            dy = 0
+            # drot = np.random.choice([0, 90, 180, 270])
+            # dx = 0
+            # dy = 0
+            drot, dx, dy = random_valid_drot_dx_dy(
+                local_pose3d_gt.copy(), cam_param, im_width, im_height
+            )
             # drot = np.random.rand() * 360
             # dx = int(np.random.rand() * 100) - 50
             # dy = int(np.random.rand() * 100) - 50
