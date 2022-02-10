@@ -88,12 +88,14 @@ class Pose3DTrainer:
             for i, data in enumerate(tqdm(dataloader), 0):
                 image_inp = data["image_inp"].float()
                 heatmaps_gt = data["heatmaps_gt"].float()
+                kpt_3d_gt = data["kpt_3d_gt"].float()
                 image_inp = image_inp.to(self.device)
                 heatmaps_gt = heatmaps_gt.to(self.device)
+                kpt_3d_gt = kpt_3d_gt.to(self.device)
 
-                heatmaps_pred = self.model(image_inp)
+                pred = self.model(image_inp)
 
-                losses = self.criterion(heatmaps_pred[0], heatmaps_gt)
+                losses = self.criterion(pred[0], heatmaps_gt, pred[1], kpt_3d_gt)
 
                 running_loss.append(losses.item())
 
