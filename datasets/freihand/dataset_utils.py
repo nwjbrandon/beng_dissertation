@@ -96,8 +96,8 @@ def random_valid_drot_dx_dy(local_pose3d_gt, cam_param, im_width, im_height):
 
     for _ in range(5):
         drot = np.random.rand() * 360
-        dx = int(np.random.rand() * 2000) - 1000
-        dy = int(np.random.rand() * 2000) - 1000
+        dx = int(np.random.rand() * 200) - 100
+        dy = int(np.random.rand() * 200) - 100
 
         z_rot = np.array(
             [
@@ -117,10 +117,10 @@ def random_valid_drot_dx_dy(local_pose3d_gt, cam_param, im_width, im_height):
         keypoints_norm[:, 1] = keypoints_norm[:, 1] / im_height
 
         if (
-            np.any(keypoints_norm[:, 0] < 1)
-            and np.any(keypoints_norm[:, 0] > 0)
-            and np.any(keypoints_norm[:, 1] < 1)
-            and np.any(keypoints_norm[:, 1] > 0)
+            np.all(keypoints_norm[:, 0] < 1)
+            and np.all(keypoints_norm[:, 0] > 0)
+            and np.all(keypoints_norm[:, 1] < 1)
+            and np.all(keypoints_norm[:, 1] > 0)
         ):
             return drot, dx, dy
     return 0, 0, 0

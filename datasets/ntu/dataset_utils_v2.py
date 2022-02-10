@@ -131,10 +131,10 @@ def random_valid_drot_dx_dy(local_pose3d_gt, cam_param, im_width, im_height):
         keypoints_norm[:, 1] = keypoints_norm[:, 1] / im_height
 
         if (
-            np.any(keypoints_norm[:, 0] < 1)
-            and np.any(keypoints_norm[:, 0] > 0)
-            and np.any(keypoints_norm[:, 1] < 1)
-            and np.any(keypoints_norm[:, 1] > 0)
+            np.all(keypoints_norm[:, 0] < 1)
+            and np.all(keypoints_norm[:, 0] > 0)
+            and np.all(keypoints_norm[:, 1] < 1)
+            and np.all(keypoints_norm[:, 1] > 0)
         ):
             return drot, dx, dy
     return 0, 0, 0
