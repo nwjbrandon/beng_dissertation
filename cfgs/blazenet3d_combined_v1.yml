@@ -33,9 +33,9 @@ training_details:
   device: cuda
   loss_file: exp/loss_info.txt
   model_file: exp/model
-  is_freeze_pose2d: True
+  is_freeze_pose2d: False
 model:
-  model_name: models.blazenet_model_3d.Pose3dModel
+  model_name: models.blazenet_model_3d_v4.Pose3dModel
   model_file: ""
   n_keypoints: 21
   raw_image_size: 256
