@@ -11,7 +11,7 @@ from models.blazenet_model_3d_v4 import Pose3dModel
 config = {
     "model": {
         "n_keypoints": 21,
-        "model_file": "exp/model_14.pth",
+        "model_file": "exp/model_1.pth",
         "device": "cuda",
         "raw_image_size": 256,
         "model_img_size": 64,
