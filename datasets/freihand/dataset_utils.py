@@ -1,3 +1,4 @@
+import glob
 import os
 
 import cv2
@@ -106,12 +107,12 @@ def random_valid_drot_dx_dy(local_pose3d_gt, cam_param, im_width, im_height):
                 [0, 0, 1],
             ]
         )
-        local_pose3d_gt = local_pose3d_gt @ z_rot
+        local_pose3d = local_pose3d_gt.copy() @ z_rot
         fx, fy = cam_param[0][0], cam_param[1][1]
-        local_pose3d_gt[:, 0] = local_pose3d_gt[:, 0] - dx / fx * local_pose3d_gt[:, 2]
-        local_pose3d_gt[:, 1] = local_pose3d_gt[:, 1] - dy / fy * local_pose3d_gt[:, 2]
+        local_pose3d[:, 0] = local_pose3d[:, 0] - dx / fx * local_pose3d[:, 2]
+        local_pose3d[:, 1] = local_pose3d[:, 1] - dy / fy * local_pose3d[:, 2]
 
-        kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
+        kpt_2d_gt = cam_projection(local_pose3d, cam_param)
         keypoints_norm = kpt_2d_gt.copy()
         keypoints_norm[:, 0] = keypoints_norm[:, 0] / im_width
         keypoints_norm[:, 1] = keypoints_norm[:, 1] / im_height
@@ -143,6 +144,9 @@ class HandPoseDataset(Dataset):
         self.use_augmented = config["dataset"]["use_augmented"]
         self.use_evaluation = config["dataset"]["use_evaluation"]
         self.test_size = config["dataset"]["test_size"]
+        self.bg_imgs_dir = config["training_details"]["bg_imgs_dir"]
+
+        self.bg_imgs = glob.glob(os.path.join(self.bg_imgs_dir, "*.jpg"))
 
         self.is_training = set_type == "train"
 
@@ -211,11 +215,27 @@ class HandPoseDataset(Dataset):
             sharpness_factor = 1 + np.random.rand() * 5 / 10 - 0.25
             is_mirror = True if np.random.rand() > 0.5 else False
             is_flip = True if np.random.rand() > 0.5 else False
+
+            image = image.rotate(drot)
+            image = image.transform(image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
+
+            # replace black pixels
+            image = np.asarray(image)
+            black_px_mask = np.all(image < 1, axis=2)
+
+            bg_img = (
+                Image.open(np.random.choice(self.bg_imgs))
+                .convert("RGB")
+                .resize((im_width, im_height))
+            )
+            bg_img = np.asarray(bg_img)
+
+            image[black_px_mask] = bg_img[black_px_mask]
+            image = Image.fromarray(image)
+
             image = ImageEnhance.Brightness(image).enhance(brightness_factor)
             image = ImageEnhance.Contrast(image).enhance(contrast_factor)
             image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)
-            image = image.rotate(drot)
-            image = image.transform(image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
             z_rot = np.array(
                 [
                     [np.cos(np.deg2rad(drot)), -np.sin(np.deg2rad(drot)), 0],
@@ -236,8 +256,8 @@ class HandPoseDataset(Dataset):
                 local_pose3d_gt[:, 1] = -local_pose3d_gt[:, 1]
 
         # Preprocess
-        image_inp = self.image_transform(image)
         kpt_2d_gt = cam_projection(local_pose3d_gt, cam_param)
+        image_inp = self.image_transform(image)
         try:
             heatmaps_gt, _ = vector_to_heatmaps(
                 kpt_2d_gt, im_width, im_height, self.n_keypoints, self.model_img_size
