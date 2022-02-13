@@ -1,4 +1,5 @@
 import glob
+import os
 import os.path as osp
 
 import cv2
@@ -40,7 +41,7 @@ def vector_to_heatmaps(keypoints, im_width, im_height, n_keypoints, model_img_si
     return heatmaps, visibility_vector
 
 
-def compute_heatmap(x, y, model_img_size, kernel_size=5):
+def compute_heatmap(x, y, model_img_size, kernel_size=9):
     # Create joint heatmap
     heatmap = np.zeros([model_img_size, model_img_size])
     heatmap[int(y * model_img_size), int(x * model_img_size)] = 1
@@ -102,6 +103,45 @@ def get_train_val_image_paths(image_dir, val_set_path, test_size, is_training):
     return image_paths
 
 
+def random_valid_drot_dx_dy(local_pose3d_gt, cam_param, im_width, im_height):
+    drot = 0
+    dx = 0
+    dy = 0
+
+    for _ in range(5):
+        drot = np.random.rand() * 360
+        dx = int(np.random.rand() * 200) - 100
+        dy = int(np.random.rand() * 200) - 100
+
+        z_rot = np.array(
+            [
+                [np.cos(np.deg2rad(drot)), -np.sin(np.deg2rad(drot)), 0],
+                [np.sin(np.deg2rad(drot)), np.cos(np.deg2rad(drot)), 0],
+                [0, 0, 1],
+            ]
+        )
+        local_pose3d = local_pose3d_gt.copy() @ z_rot
+        fl = cam_param[0]
+        local_pose3d[:, 0] = local_pose3d[:, 0] - dx / fl * local_pose3d[:, 2]
+        local_pose3d[:, 1] = local_pose3d[:, 1] - dy / fl * local_pose3d[:, 2]
+        cam_proj_mat = np.array(
+            [[fl, 0.0, im_width / 2.0], [0.0, fl, im_height / 2.0], [0.0, 0.0, 1.0]]
+        )
+        kpt_2d_gt = cam_projection(local_pose3d, cam_proj_mat)
+        keypoints_norm = kpt_2d_gt.copy()
+        keypoints_norm[:, 0] = keypoints_norm[:, 0] / im_width
+        keypoints_norm[:, 1] = keypoints_norm[:, 1] / im_height
+
+        if (
+            np.all(keypoints_norm[:, 0] < 1)
+            and np.all(keypoints_norm[:, 0] > 0)
+            and np.all(keypoints_norm[:, 1] < 1)
+            and np.all(keypoints_norm[:, 1] > 0)
+        ):
+            return drot, dx, dy
+    return 0, 0, 0
+
+
 class HandPoseDataset(Dataset):
     """
     Class to load hand pose dataset.
@@ -119,6 +159,9 @@ class HandPoseDataset(Dataset):
         self.n_keypoints = config["model"]["n_keypoints"]
         self.raw_image_size = config["model"]["raw_image_size"]
         self.model_img_size = config["model"]["model_img_size"]
+        self.bg_imgs_dir = config["training_details"]["bg_imgs_dir"]
+
+        self.bg_imgs = glob.glob(os.path.join(self.bg_imgs_dir, "*.jpg"))
 
         self.is_training = set_type == "train"
 
@@ -170,9 +213,12 @@ class HandPoseDataset(Dataset):
         im_width, im_height = image.size
 
         if self.is_training:
-            drot = np.random.choice([0, 90, 180, 270])
-            dx = 0
-            dy = 0
+            # drot = np.random.choice([0, 90, 180, 270])
+            # dx = 0
+            # dy = 0
+            drot, dx, dy = random_valid_drot_dx_dy(
+                local_pose3d_gt.copy(), cam_param, im_width, im_height
+            )
             # drot = np.random.rand() * 360
             # dx = int(np.random.rand() * 100) - 50
             # dy = int(np.random.rand() * 100) - 50
@@ -194,6 +240,21 @@ class HandPoseDataset(Dataset):
             local_pose3d_gt[:, 1] = local_pose3d_gt[:, 1] - dy / fl * local_pose3d_gt[:, 2]
             image = image.rotate(drot)
             image = image.transform(image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
+
+            # replace black pixels
+            image = np.asarray(image)
+            black_px_mask = np.all(image < 1, axis=2)
+
+            bg_img = (
+                Image.open(np.random.choice(self.bg_imgs))
+                .convert("RGB")
+                .resize((im_width, im_height))
+            )
+            bg_img = np.asarray(bg_img)
+
+            image[black_px_mask] = bg_img[black_px_mask]
+            image = Image.fromarray(image)
+
             image = ImageEnhance.Brightness(image).enhance(brightness_factor)
             image = ImageEnhance.Contrast(image).enhance(contrast_factor)
             image = ImageEnhance.Sharpness(image).enhance(sharpness_factor)

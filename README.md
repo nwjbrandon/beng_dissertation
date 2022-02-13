@@ -41,3 +41,9 @@ python3 train.py --cfg cfgs/blazenet_freihand_v1.yml --mode visualize
 ```
 python3 train.py --cfg cfgs/blazenet_freihand_v1.yml --mode validate
 ```
+
+## Best Hand Pose 2D Model
+- Train
+```
+python3 train_v2.py --cfg cfgs/blazenet_combined_v3.yml
+```

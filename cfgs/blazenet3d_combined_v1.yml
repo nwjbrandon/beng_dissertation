@@ -34,6 +34,7 @@ training_details:
   loss_file: exp/loss_info.txt
   model_file: exp/model
   is_freeze_pose2d: False
+  bg_imgs_dir: data/bg_imgs
 model:
   model_name: models.blazenet_model_3d_v4.Pose3dModel
   model_file: ""
