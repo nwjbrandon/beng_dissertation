@@ -20,27 +20,27 @@ dataset:
 training_details:
   trainer: trainers.blazenet3d_trainer.Pose3DTrainer
   epochs: 10000
-  batch_size: 32
+  batch_size: 2
   optimizer: torch.optim.Adam
-  learning_rate: 0.01
-  num_workers: 8
+  learning_rate: 0.001
+  num_workers: 1
   shuffle: True
   scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
   scheduler_factor: 0.5
   scheduler_patience: 5
   scheduler_verbose: True
   scheduler_threshold: 0.0001
-  device: cuda
+  device: cpu
   loss_file: exp/loss_info.txt
   model_file: exp/model
   is_freeze_pose2d: False
   bg_imgs_dir: data/bg_imgs
 model:
-  model_name: models.blazenet_model_3d_v4.Pose3dModel
+  model_name: models.blazenet_model_3d.Pose3dModel
   model_file: ""
   n_keypoints: 21
   raw_image_size: 256
-  model_img_size: 64
+  model_img_size: 128
 test:
   test_class: datasets.freihand.test_dataset.TestDataset
   model_file: exp/model_1.pth
