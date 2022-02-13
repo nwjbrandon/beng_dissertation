@@ -1,5 +1,4 @@
 import cv2
-import matplotlib.pyplot as plt
 import torch
 from PIL import Image
 from torchvision import transforms
@@ -11,7 +10,7 @@ from models.blazenet_model_v5 import Pose2dModel
 config = {
     "model": {
         "n_keypoints": 21,
-        "model_file": "exp/model_6.pth",
+        "model_file": "exp/model_10.pth",
         "device": "cuda",
         "raw_image_size": 256,
         "model_img_size": 128,
@@ -29,8 +28,6 @@ image_transform = transforms.Compose(
 
 # define a video capture object
 vid = cv2.VideoCapture(0)
-fig = plt.figure(figsize=(5, 5))
-ax = plt.axes(projection="3d")
 
 with torch.no_grad():
     while True:
