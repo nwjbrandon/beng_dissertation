@@ -41,7 +41,7 @@ def vector_to_heatmaps(keypoints, im_width, im_height, n_keypoints, model_img_si
     return heatmaps, visibility_vector
 
 
-def compute_heatmap(x, y, model_img_size, kernel_size=5):
+def compute_heatmap(x, y, model_img_size, kernel_size=9):
     # Create joint heatmap
     heatmap = np.zeros([model_img_size, model_img_size])
     heatmap[int(y * model_img_size), int(x * model_img_size)] = 1
