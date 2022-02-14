@@ -10,7 +10,7 @@ from models.blazenet_model_v5 import Pose2dModel
 config = {
     "model": {
         "n_keypoints": 21,
-        "model_file": "exp/model_10.pth",
+        "model_file": "exp/model_1.pth",
         "device": "cuda",
         "raw_image_size": 256,
         "model_img_size": 128,

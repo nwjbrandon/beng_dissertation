@@ -47,3 +47,9 @@ python3 train.py --cfg cfgs/blazenet_freihand_v1.yml --mode validate
 ```
 python3 train_v2.py --cfg cfgs/blazenet_combined_v3.yml
 ```
+
+## Best Hand Pose 3D Model
+- Train using hand pose 2d with weights freezed
+```
+python3 train3d_v2.py --cfg cfgs/blazenet3d_combined_v1.yml
+```
