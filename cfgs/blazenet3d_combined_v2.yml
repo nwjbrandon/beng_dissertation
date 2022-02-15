@@ -33,14 +33,14 @@ training_details:
   device: cuda
   loss_file: exp/loss_info.txt
   model_file: exp/model
-  is_freeze_pose2d: False
+  is_freeze_pose2d: True
   bg_imgs_dir: data/bg_imgs
 model:
-  model_name: models.blazenet_model_3d_v10.Pose3dModel
-  model_file: ""
+  model_name: models.blazenet_model_3d_v2.Pose3dModel
+  model_file: best_model_2d.pth
   n_keypoints: 21
   raw_image_size: 256
-  model_img_size: 64
+  model_img_size: 128
 test:
   test_class: datasets.freihand.test_dataset.TestDataset
   model_file: exp/model_1.pth
