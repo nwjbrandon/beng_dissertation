@@ -1,8 +1,9 @@
 import torch
 from torch import nn
 
-from models.blazenet_model_v5 import Pose2dModel, ConvBn
+from models.blazenet_model_v5 import ConvBn, Pose2dModel
 from models.resnet import BasicBlock
+
 
 class DownConv(nn.Module):
     def __init__(
