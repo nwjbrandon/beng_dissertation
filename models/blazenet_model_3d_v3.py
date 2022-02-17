@@ -5,8 +5,6 @@ from torch.nn.parameter import Parameter
 from models.blazenet_model_v5 import ConvBn, Pose2dModel
 from models.resnet import BasicBlock
 
-N_JOINTS = 21
-
 
 class DownConv(nn.Module):
     def __init__(
@@ -61,15 +59,15 @@ class Regressor3d(nn.Module):
         self.conv16 = BasicBlock(320, 320)
         self.conv17 = DownConv(320, 192)
         self.conv18 = BasicBlock(704, 704)
-        self.conv19 = DownConv(704, 210)
+        self.conv19 = DownConv(704, 21)
+
+        self.flat = nn.Flatten(start_dim=2)
 
         # gcn
-        self.A_0 = Parameter(torch.eye(21, dtype=torch.float), requires_grad=True)
-        self.gconv0 = GraphConv(160, 3)
+        self.A_0 = Parameter(torch.eye(N_JOINTS, dtype=torch.float), requires_grad=True)
+        self.gconv0 = GraphConv(16, 3)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
-        B, _, _, _ = heatmaps.shape
-
         out11 = self.conv11(heatmaps)
         out12 = self.conv12(torch.cat([out11, out2], dim=1))
         out13 = self.conv13(out12)
@@ -80,7 +78,7 @@ class Regressor3d(nn.Module):
         out18 = self.conv18(torch.cat([out17, out5], dim=1))
         out19 = self.conv19(out18)
 
-        feat = out19.view(B, self.out_channels, -1)
+        feat = self.flat(out19)
 
         kpt_3d = self.gconv0(feat, self.A_0)
         return kpt_3d

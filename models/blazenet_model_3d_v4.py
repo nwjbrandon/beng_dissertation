@@ -85,9 +85,9 @@ class Regressor3d(nn.Module):
         out18 = self.conv18(torch.cat([out17, out5], dim=1))
         out19 = self.conv19(out18)
 
-        x = out19.view(B, self.out_channels, -1)
+        feat = out19.view(B, self.out_channels, -1)
 
-        out20 = self.gconv20(x)
+        out20 = self.gconv20(feat)
         out21 = self.gconv21(out20)
         out22 = self.gconv22(out21)
         out23 = self.gconv23(out22)
