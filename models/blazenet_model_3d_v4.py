@@ -1,11 +1,37 @@
 import torch
 from torch import nn
-from torch.nn.parameter import Parameter
 
 from models.blazenet_model_v5 import ConvBn, Pose2dModel
 from models.resnet import BasicBlock
+from models.semgcn import SemGraphConv, _GraphConv, _ResGraphConv, adj_mx_from_edges
 
 N_JOINTS = 21
+
+HAND_JOINTS_PARENTS = [
+    -1,
+    0,
+    1,
+    2,
+    3,
+    0,
+    5,
+    6,
+    7,
+    0,
+    9,
+    10,
+    11,
+    0,
+    13,
+    14,
+    15,
+    0,
+    17,
+    18,
+    19,
+]
+HAND_EDGES = list(filter(lambda x: x[1] >= 0, zip(list(range(0, N_JOINTS)), HAND_JOINTS_PARENTS)))
+HAND_ADJ = adj_mx_from_edges(N_JOINTS, HAND_EDGES, sparse=False)
 
 
 class DownConv(nn.Module):
@@ -24,31 +50,6 @@ class DownConv(nn.Module):
         return x
 
 
-class GraphConv(nn.Module):
-    def __init__(self, in_features, out_features):
-        super(GraphConv, self).__init__()
-        self.fc = nn.Linear(in_features=in_features, out_features=out_features)
-        self.act = nn.Tanh()
-
-    def laplacian(self, A_hat):
-        D_hat = (torch.sum(A_hat, 0) + 1e-5) ** (-0.5)
-        L = D_hat * A_hat * D_hat
-        return L
-
-    def laplacian_batch(self, A_hat):
-        batch, N = A_hat.shape[:2]
-        D_hat = (torch.sum(A_hat, 1) + 1e-5) ** (-0.5)
-        L = D_hat.view(batch, N, 1) * A_hat * D_hat.view(batch, 1, N)
-        return L
-
-    def forward(self, X, A):
-        batch = X.size(0)
-        A_hat = A.unsqueeze(0).repeat(batch, 1, 1)
-        X = self.fc(torch.bmm(self.laplacian_batch(A_hat), X))
-        X = self.act(X)
-        return X
-
-
 class Regressor3d(nn.Module):
     def __init__(self, config):
         super(Regressor3d, self).__init__()
@@ -64,8 +65,12 @@ class Regressor3d(nn.Module):
         self.conv19 = DownConv(704, 210)
 
         # gcn
-        self.A_0 = Parameter(torch.eye(21, dtype=torch.float), requires_grad=True)
-        self.gconv0 = GraphConv(160, 3)
+        self.gconv20 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
+        self.gconv21 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv22 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv23 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv24 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
         B, _, _, _ = heatmaps.shape
@@ -80,9 +85,14 @@ class Regressor3d(nn.Module):
         out18 = self.conv18(torch.cat([out17, out5], dim=1))
         out19 = self.conv19(out18)
 
-        feat = out19.view(B, self.out_channels, -1)
+        x = out19.view(B, self.out_channels, -1)
 
-        kpt_3d = self.gconv0(feat, self.A_0)
+        out20 = self.gconv20(x)
+        out21 = self.gconv21(out20)
+        out22 = self.gconv22(out21)
+        out23 = self.gconv23(out22)
+        out24 = self.gconv24(out23)
+        kpt_3d = self.gconvout(out24)
         return kpt_3d
 
 
