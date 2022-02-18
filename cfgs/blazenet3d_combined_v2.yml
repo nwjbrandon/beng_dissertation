@@ -19,7 +19,7 @@ dataset:
     test_size: 0.1
 training_details:
   trainer: trainers.blazenet3d_trainer.Pose3DTrainer
-  epochs: 10000
+  epochs: 30
   batch_size: 32
   optimizer: torch.optim.Adam
   learning_rate: 0.001
