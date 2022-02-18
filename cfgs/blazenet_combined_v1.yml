@@ -1,4 +1,4 @@
-description: "blazenet model for pose 2d estimation with freihand and ntu"
+description: "blazenet 2d with resnet18 on ntu and freihand dataset"
 dataset:
   freihand:
     data_dir: data/freihand
@@ -15,13 +15,14 @@ dataset:
     global_mesh_gt_dir: ./data/synthetic_train_val/hand_3D_mesh
     val_cams_file: ./data/synthetic_train_val/3D_labels/val-camera.txt
     sample_image_file: data/synthetic_train_val/images/l21/cam21/handV2_rgt01_specTest5_gPoses_ren_25cRrRs_l21_cam21_.0492.png
-    dataset_name: datasets.ntu.dataset_utils.HandPoseDataset
+    dataset_name: datasets.ntu.dataset_utils_v2.HandPoseDataset
+    test_size: 0.1
 training_details:
   trainer: trainers.blazenet_trainer.Pose2DTrainer
   epochs: 10000
   batch_size: 32
   optimizer: torch.optim.Adam
-  learning_rate: 0.01
+  learning_rate: 0.001
   num_workers: 8
   shuffle: True
   scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
@@ -32,8 +33,9 @@ training_details:
   device: cuda
   loss_file: exp/loss_info.txt
   model_file: exp/model
+  bg_imgs_dir: data/bg_imgs
 model:
-  model_name: models.blazenet_model_v4.Pose2dModel
+  model_name: models.blazenet_model_v2.Pose2dModel
   model_file: ""
   n_keypoints: 21
   raw_image_size: 256
