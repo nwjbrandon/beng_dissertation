@@ -5,6 +5,8 @@ from torch.nn.parameter import Parameter
 from models.blazenet_model_v5 import ConvBn, Pose2dModel
 from models.resnet import BasicBlock
 
+N_JOINTS = 21
+
 
 class DownConv(nn.Module):
     def __init__(
