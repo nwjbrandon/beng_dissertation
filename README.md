@@ -5,6 +5,7 @@
   <img alt="inference 1" src="assets/pose2d.png" width="19.5%">
   <img alt="inference 2" src="assets/pose3d.png" width="20%">
 </p>
+
 - Watch [live demo](https://www.youtube.com/watch?v=uNvQX3RaTe0)
 
 ## Setup (Ubuntu 18 Python3.8)
