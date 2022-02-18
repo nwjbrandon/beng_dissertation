@@ -5,6 +5,7 @@ from torch.nn.parameter import Parameter
 from models.blazenet_model_v5 import ConvBn, Pose2dModel
 from models.resnet import BasicBlock
 
+N_JOINTS = 21
 
 class DownConv(nn.Module):
     def __init__(
@@ -52,33 +53,27 @@ class Regressor3d(nn.Module):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
         self.conv11 = DownConv(21, 21)
-        self.conv12 = BasicBlock(85, 85)
-        self.conv13 = DownConv(85, 32)
-        self.conv14 = BasicBlock(160, 160)
-        self.conv15 = DownConv(160, 64)
-        self.conv16 = BasicBlock(320, 320)
-        self.conv17 = DownConv(320, 192)
-        self.conv18 = BasicBlock(704, 704)
-        self.conv19 = DownConv(704, 21)
-
-        self.flat = nn.Flatten(start_dim=2)
+        self.conv12 = DownConv(85, 32)
+        self.conv13 = DownConv(160, 64)
+        self.conv14 = DownConv(320, 192)
+        self.conv15 = DownConv(704, 210)
+        self.conv16 = BasicBlock(210, 210)
 
         # gcn
         self.A_0 = Parameter(torch.eye(N_JOINTS, dtype=torch.float), requires_grad=True)
-        self.gconv0 = GraphConv(16, 3)
+        self.gconv0 = GraphConv(160, 3)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
+        B, _, _, _ = heatmaps.shape
+
         out11 = self.conv11(heatmaps)
         out12 = self.conv12(torch.cat([out11, out2], dim=1))
-        out13 = self.conv13(out12)
-        out14 = self.conv14(torch.cat([out13, out3], dim=1))
-        out15 = self.conv15(out14)
-        out16 = self.conv16(torch.cat([out15, out4], dim=1))
-        out17 = self.conv17(out16)
-        out18 = self.conv18(torch.cat([out17, out5], dim=1))
-        out19 = self.conv19(out18)
+        out13 = self.conv13(torch.cat([out12, out3], dim=1))
+        out14 = self.conv14(torch.cat([out13, out4], dim=1))
+        out15 = self.conv15(torch.cat([out14, out5], dim=1))
+        out16 = self.conv16(out15)
 
-        feat = self.flat(out19)
+        feat = out16.view(B, self.out_channels, -1)
 
         kpt_3d = self.gconv0(feat, self.A_0)
         return kpt_3d
