@@ -6,12 +6,12 @@ from torchvision import transforms
 
 from datasets.freihand.data_utils import draw_2d_skeleton, draw_3d_skeleton_on_ax
 from datasets.freihand.dataset_utils import heatmaps_to_coordinates
-from models.blazenet_model_3d import Pose3dModel
+from models.blazenet_model_3d_v3 import Pose3dModel
 
 config = {
     "model": {
         "n_keypoints": 21,
-        "model_file": "exp/model_1.pth",
+        "model_file": "exp/model_26.pth",
         "device": "cuda",
         "raw_image_size": 256,
         "model_img_size": 128,
