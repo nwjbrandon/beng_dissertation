@@ -2,6 +2,7 @@ import torch
 from torch import nn
 
 from models.blazenet_model_v5 import ConvBn, Pose2dModel
+from models.resnet import BasicBlock
 
 
 class DownConv(nn.Module):
@@ -29,6 +30,7 @@ class Regressor3d(nn.Module):
         self.conv13 = DownConv(160, 64)
         self.conv14 = DownConv(320, 192)
         self.conv15 = DownConv(704, 192)
+        self.conv16 = BasicBlock(192, 192)
 
         self.flat = nn.Flatten()
         self.fc = nn.Linear(3072, self.out_channels * 3)
@@ -39,8 +41,9 @@ class Regressor3d(nn.Module):
         out13 = self.conv13(torch.cat([out12, out3], dim=1))
         out14 = self.conv14(torch.cat([out13, out4], dim=1))
         out15 = self.conv15(torch.cat([out14, out5], dim=1))
+        out16 = self.conv16(out15)
 
-        x = self.flat(out15)
+        x = self.flat(out16)
         kpt_3d = self.fc(x)
 
         # reshape

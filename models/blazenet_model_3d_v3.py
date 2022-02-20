@@ -2,9 +2,9 @@ import torch
 from torch import nn
 
 from models.blazenet_model_v5 import ConvBn, Pose2dModel
+from models.non_local import NLBlockND
 from models.resnet import BasicBlock
 from models.semgcn import SemGraphConv, _GraphConv, _ResGraphConv, adj_mx_from_edges
-from models.non_local import NLBlockND
 
 N_JOINTS = 21
 
@@ -65,13 +65,21 @@ class Regressor3d(nn.Module):
         # gcn
         self.gconv17 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
         self.gconv18 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv19 = NLBlockND(in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True)
+        self.gconv19 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
         self.gconv20 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv21 = NLBlockND(in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True)
+        self.gconv21 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
         self.gconv22 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv23 = NLBlockND(in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True)
+        self.gconv23 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
         self.gconv24 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv25 = NLBlockND(in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True)
+        self.gconv25 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
         self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
 
     def forward(self, heatmaps, out2, out3, out4, out5):

@@ -1,4 +1,4 @@
-description: "blazenet model for pose 3d estimation residual blocks with freihand"
+description: "blazenet model for pose 3d estimation residual blocks on freihand"
 dataset:
   data_dir: data/freihand
   dataset_name: datasets.freihand.dataset_utils.HandPoseDataset

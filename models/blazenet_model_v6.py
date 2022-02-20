@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from models.resnet import BasicBlock, resnet34
+from models.resnet import resnet18
 
 
 class Conv(nn.Module):
@@ -71,13 +71,10 @@ class UpConv(nn.Module):
         if self.is_upsample:
             self._up2 = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False)
 
-        self._conv2 = BasicBlock(out_channels, out_channels)
-
     def forward(self, x):
         x = self._conv1(x)
         if self.is_upsample:
             x = self._up2(x)
-        x = self._conv2(x)
         return x
 
 
@@ -117,7 +114,7 @@ class Pose2dModel(nn.Module):
     def __init__(self, config):
         super(Pose2dModel, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
-        self.resnet = resnet34()
+        self.resnet = resnet18()
         self.decoder = Decoder(self.out_channels)
 
     def forward(self, x):

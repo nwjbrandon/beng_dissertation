@@ -1,4 +1,4 @@
-description: "blazenet 2d with resnet34 resolution 128 decoder channels 21 residual blocks on decoder on ntu and freihand dataset"
+description: "blazenet 2d with resnet18 resolution 128 decoder channels 21 on ntu and freihand dataset"
 dataset:
   data_dir: data/freihand
   dataset_name: datasets.freihand.dataset_utils.HandPoseDataset

@@ -1,4 +1,4 @@
-description: "blazenet model for pose 3d estimation non local and semgcn with freihand"
+description: "blazenet model for pose 3d estimation non local and semgcn on freihand"
 dataset:
   data_dir: data/freihand
   dataset_name: datasets.freihand.dataset_utils.HandPoseDataset
