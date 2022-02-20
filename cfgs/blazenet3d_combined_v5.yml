@@ -1,4 +1,4 @@
-description: "blazenet model for pose 2d estimation with freihand and ntu (selected cams)"
+description: "blazenet model for pose 3d estimation non local with freihand and ntu (selected cams)"
 dataset:
   freihand:
     data_dir: data/freihand

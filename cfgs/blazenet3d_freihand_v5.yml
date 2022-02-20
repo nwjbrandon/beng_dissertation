@@ -1,4 +1,4 @@
-description: "blazenet model for pose 3d estimation residual blocks with freihand"
+description: "blazenet model for pose 3d estimation non local with freihand"
 dataset:
   data_dir: data/freihand
   dataset_name: datasets.freihand.dataset_utils.HandPoseDataset
@@ -26,7 +26,7 @@ training_details:
   is_freeze_pose2d: True
   bg_imgs_dir: data/bg_imgs
 model:
-  model_name: models.blazenet_model_3d.Pose3dModel
+  model_name: models.blazenet_model_3d_v5.Pose3dModel
   model_file: best_model_2d.pth
   n_keypoints: 21
   raw_image_size: 256

@@ -15,14 +15,10 @@ class DownConv(nn.Module):
             in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
         self._maxpool2 = nn.MaxPool2d(2, 2)
-        self._conv2 = BasicBlock(out_channels, out_channels)
-        self._conv3 = NLBlockND(in_channels=out_channels, mode="concatenate", dimension=2, bn_layer=True)
 
     def forward(self, x):
         x = self._conv1(x)
         x = self._maxpool2(x)
-        x = self._conv2(x)
-        x = self._conv3(x)
         return x
 
 
@@ -35,6 +31,8 @@ class Regressor3d(nn.Module):
         self.conv13 = DownConv(160, 64)
         self.conv14 = DownConv(320, 192)
         self.conv15 = DownConv(704, 192)
+        self.conv16 = BasicBlock(192, 192)
+        self.conv17 = NLBlockND(in_channels=192, mode="concatenate", dimension=2, bn_layer=True)
 
         self.flat = nn.Flatten()
         self.fc = nn.Linear(3072, self.out_channels * 3)
@@ -42,11 +40,13 @@ class Regressor3d(nn.Module):
     def forward(self, heatmaps, out2, out3, out4, out5):
         out11 = self.conv11(heatmaps)
         out12 = self.conv12(torch.cat([out11, out2], dim=1))
-        out13 = self.conv13(torch.cat([out13, out3], dim=1))
-        out14 = self.conv14(torch.cat([out15, out4], dim=1))
-        out15 = self.conv15(torch.cat([out17, out5], dim=1))
+        out13 = self.conv13(torch.cat([out12, out3], dim=1))
+        out14 = self.conv14(torch.cat([out13, out4], dim=1))
+        out15 = self.conv15(torch.cat([out14, out5], dim=1))
+        out16 = self.conv16(out15)
+        out17 = self.conv17(out16)
 
-        x = self.flat(out15)
+        x = self.flat(out17)
         kpt_3d = self.fc(x)
 
         # reshape
