@@ -1,4 +1,4 @@
-description: "blazenet model for pose 2d estimation with freihand and ntu (selected cams)"
+description: "blazenet model for pose 3d estimation residual blocks on freihand and ntu (selected cams)"
 dataset:
   freihand:
     data_dir: data/freihand
@@ -19,7 +19,7 @@ dataset:
     test_size: 0.1
 training_details:
   trainer: trainers.blazenet3d_trainer.Pose3DTrainer
-  epochs: 10000
+  epochs: 30
   batch_size: 32
   optimizer: torch.optim.Adam
   learning_rate: 0.001

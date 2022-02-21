@@ -1,7 +1,9 @@
 import torch
 from torch import nn
 
-from models.resnet import resnet18
+from models.blazenet_model_v5 import ConvBn, Pose2dModel
+from models.non_local import NLBlockND
+from models.resnet import BasicBlock
 from models.semgcn import SemGraphConv, _GraphConv, _ResGraphConv, adj_mx_from_edges
 
 N_JOINTS = 21
@@ -33,61 +35,6 @@ HAND_EDGES = list(filter(lambda x: x[1] >= 0, zip(list(range(0, N_JOINTS)), HAND
 HAND_ADJ = adj_mx_from_edges(N_JOINTS, HAND_EDGES, sparse=False)
 
 
-class Conv(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size, stride, padding,
-    ):
-        super(Conv, self).__init__()
-        self._conv1 = nn.Conv2d(
-            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-        self._act1 = nn.ReLU()
-
-    def forward(self, x):
-        x = self._conv1(x)
-        x = self._act1(x)
-        return x
-
-
-class ConvSig(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size, stride, padding,
-    ):
-        super(ConvSig, self).__init__()
-        self._conv1 = nn.Conv2d(
-            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-        self._act1 = nn.Sigmoid()
-
-    def forward(self, x):
-        x = self._conv1(x)
-        x = self._act1(x)
-        return x
-
-
-class ConvBn(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size, stride, padding,
-    ):
-        super(ConvBn, self).__init__()
-        self._conv1 = nn.Conv2d(
-            in_channels,
-            out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
-            bias=False,
-        )
-        self._batch_norm1 = nn.BatchNorm2d(out_channels)
-        self._act1 = nn.ReLU()
-
-    def forward(self, x):
-        x = self._conv1(x)
-        x = self._batch_norm1(x)
-        x = self._act1(x)
-        return x
-
-
 class DownConv(nn.Module):
     def __init__(
         self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
@@ -104,101 +51,57 @@ class DownConv(nn.Module):
         return x
 
 
-class UpConv(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, is_upsample=True
-    ):
-        super(UpConv, self).__init__()
-        self.is_upsample = is_upsample
-        self._conv1 = ConvBn(
-            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-        if self.is_upsample:
-            self._up2 = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False)
-
-    def forward(self, x):
-        x = self._conv1(x)
-        if self.is_upsample:
-            x = self._up2(x)
-        return x
-
-
-class OutConv(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
-    ):
-        super(OutConv, self).__init__()
-        self._conv1 = ConvSig(
-            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-
-    def forward(self, x):
-        x = self._conv1(x)
-        return x
-
-
-class Decoder(nn.Module):
-    def __init__(self, out_channels):
-        super(Decoder, self).__init__()
-        self.conv6 = UpConv(in_channels=512, out_channels=32)
-        self.conv7 = UpConv(in_channels=288, out_channels=32)
-        self.conv8 = UpConv(in_channels=160, out_channels=32)
-        self.conv9 = UpConv(in_channels=96, out_channels=32, is_upsample=False)
-        self.conv10 = OutConv(in_channels=32, out_channels=out_channels)
-
-    def forward(self, out2, out3, out4, out5):
-        out6 = self.conv6(out5)
-        out7 = self.conv7(torch.cat([out6, out4], dim=1))
-        out8 = self.conv8(torch.cat([out7, out3], dim=1))
-        out9 = self.conv9(torch.cat([out8, out2], dim=1))
-        heatmaps = self.conv10(out9)
-        return heatmaps
-
-
-class Pose2dModel(nn.Module):
-    def __init__(self, config):
-        super(Pose2dModel, self).__init__()
-        self.out_channels = config["model"]["n_keypoints"]
-        self.resnet = resnet18()
-        self.decoder = Decoder(self.out_channels)
-
-    def forward(self, x):
-        out2, out3, out4, out5 = self.resnet(x)
-        heatmaps = self.decoder(out2, out3, out4, out5)
-        return heatmaps, out2, out3, out4, out5
-
-
 class Regressor3d(nn.Module):
     def __init__(self, config):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
-
-        # cnn
-        self.conv11 = DownConv(85, 32)
-        self.conv12 = DownConv(160, 64)
-        self.conv13 = DownConv(320, 192)
-        self.conv14 = DownConv(704, 210)
+        self.conv11 = DownConv(21, 21)
+        self.conv12 = DownConv(85, 32)
+        self.conv13 = DownConv(160, 64)
+        self.conv14 = DownConv(320, 192)
+        self.conv15 = DownConv(704, 210)
 
         # gcn
-        self.gconv1 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
-        self.gconv2 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv3 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv4 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv5 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv17 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
+        self.gconv18 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv19 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
+        self.gconv20 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv21 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
+        self.gconv22 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv23 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
+        self.gconv24 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv25 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
         self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
 
     def forward(self, heatmaps, out2, out3, out4, out5):
         B, _, _, _ = heatmaps.shape
-        out11 = self.conv11(torch.cat([heatmaps, out2], dim=1))
-        out12 = self.conv12(torch.cat([out11, out3], dim=1))
-        out13 = self.conv13(torch.cat([out12, out4], dim=1))
-        out14 = self.conv14(torch.cat([out13, out5], dim=1))
-        feat = out14.view(B, self.out_channels, -1)
-        out15 = self.gconv1(feat)
-        out16 = self.gconv2(out15)
-        out17 = self.gconv3(out16)
-        out18 = self.gconv4(out17)
-        kpt_3d = self.gconvout(out18)
+
+        out11 = self.conv11(heatmaps)
+        out12 = self.conv12(torch.cat([out11, out2], dim=1))
+        out13 = self.conv13(torch.cat([out12, out3], dim=1))
+        out14 = self.conv14(torch.cat([out13, out4], dim=1))
+        out15 = self.conv15(torch.cat([out14, out5], dim=1))
+
+        out16 = out15.view(B, self.out_channels, -1)
+
+        out17 = self.gconv17(out16)
+        out18 = self.gconv18(out17)
+        out19 = self.gconv19(out18)
+        out20 = self.gconv20(out19)
+        out21 = self.gconv21(out20)
+        out22 = self.gconv22(out21)
+        out23 = self.gconv23(out22)
+        out24 = self.gconv24(out23)
+        out25 = self.gconv25(out24)
+        kpt_3d = self.gconvout(out25)
         return kpt_3d
 
 

@@ -1,4 +1,4 @@
-description: "blazenet model for pose 2d estimation with freihand and ntu (selected cams)"
+description: "blazenet 2d with resnet34 resolution 64 on ntu and freihand dataset"
 dataset:
   freihand:
     data_dir: data/freihand
@@ -22,7 +22,7 @@ training_details:
   epochs: 10000
   batch_size: 32
   optimizer: torch.optim.Adam
-  learning_rate: 0.01
+  learning_rate: 0.001
   num_workers: 8
   shuffle: True
   scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
@@ -33,6 +33,7 @@ training_details:
   device: cuda
   loss_file: exp/loss_info.txt
   model_file: exp/model
+  bg_imgs_dir: data/bg_imgs
 model:
   model_name: models.blazenet_model_v4.Pose2dModel
   model_file: ""

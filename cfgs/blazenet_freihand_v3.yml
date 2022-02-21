@@ -1,4 +1,4 @@
-description: "blazenet model for pose 2d estimation with freihand using ELU as activation function"
+description: "blazenet 2d with resnet34 resolution 64 on freihand dataset"
 dataset:
   data_dir: data/freihand
   dataset_name: datasets.freihand.dataset_utils.HandPoseDataset
@@ -9,20 +9,21 @@ dataset:
   test_size: 0.1
 training_details:
   trainer: trainers.blazenet_trainer.Pose2DTrainer
-  epochs: 10000
+  epochs: 200
   batch_size: 32
   optimizer: torch.optim.Adam
-  learning_rate: 0.01
+  learning_rate: 0.001
   num_workers: 8
   shuffle: True
   scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
   scheduler_factor: 0.5
-  scheduler_patience: 10
+  scheduler_patience: 5
   scheduler_verbose: True
   scheduler_threshold: 0.0001
   device: cuda
   loss_file: exp/loss_info.txt
   model_file: exp/model
+  bg_imgs_dir: data/bg_imgs
 model:
   model_name: models.blazenet_model_v3.Pose2dModel
   model_file: ""

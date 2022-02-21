@@ -1,4 +1,4 @@
-description: "blazenet model for pose 2d estimation with freihand and ntu (selected cams) with resnet34"
+description: "blazenet 2d with resnet34 resolution 128 on ntu and freihand dataset"
 dataset:
   freihand:
     data_dir: data/freihand

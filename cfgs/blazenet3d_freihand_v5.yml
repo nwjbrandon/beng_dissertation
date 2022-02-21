@@ -1,4 +1,4 @@
-description: "blazenet model for pose 2d estimation with freihand and ntu (selected cams)"
+description: "blazenet model for pose 3d estimation non local on freihand"
 dataset:
   data_dir: data/freihand
   dataset_name: datasets.freihand.dataset_utils.HandPoseDataset
@@ -9,10 +9,10 @@ dataset:
   test_size: 0.1
 training_details:
   trainer: trainers.blazenet3d_trainer.Pose3DTrainer
-  epochs: 10000
+  epochs: 30
   batch_size: 32
   optimizer: torch.optim.Adam
-  learning_rate: 0.01
+  learning_rate: 0.001
   num_workers: 8
   shuffle: True
   scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
@@ -23,13 +23,14 @@ training_details:
   device: cuda
   loss_file: exp/loss_info.txt
   model_file: exp/model
-  is_freeze_pose2d: False
+  is_freeze_pose2d: True
+  bg_imgs_dir: data/bg_imgs
 model:
   model_name: models.blazenet_model_3d_v5.Pose3dModel
-  model_file: ""
+  model_file: best_model_2d.pth
   n_keypoints: 21
   raw_image_size: 256
-  model_img_size: 64
+  model_img_size: 128
 test:
   test_class: datasets.freihand.test_dataset.TestDataset
   model_file: exp/model_1.pth

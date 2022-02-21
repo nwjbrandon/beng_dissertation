@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from models.resnet import resnet18
+from models.resnet import resnet34
 
 
 class Conv(nn.Module):
@@ -95,11 +95,11 @@ class OutConv(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, out_channels):
         super(Decoder, self).__init__()
-        self.conv6 = UpConv(in_channels=512, out_channels=32)
-        self.conv7 = UpConv(in_channels=288, out_channels=32)
-        self.conv8 = UpConv(in_channels=160, out_channels=32)
-        self.conv9 = UpConv(in_channels=96, out_channels=32, is_upsample=False)
-        self.conv10 = OutConv(in_channels=32, out_channels=out_channels)
+        self.conv6 = UpConv(in_channels=512, out_channels=out_channels)
+        self.conv7 = UpConv(in_channels=277, out_channels=out_channels)
+        self.conv8 = UpConv(in_channels=149, out_channels=out_channels)
+        self.conv9 = UpConv(in_channels=85, out_channels=out_channels, is_upsample=False)
+        self.conv10 = OutConv(in_channels=21, out_channels=out_channels)
 
     def forward(self, out2, out3, out4, out5):
         out6 = self.conv6(out5)
@@ -114,7 +114,7 @@ class Pose2dModel(nn.Module):
     def __init__(self, config):
         super(Pose2dModel, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
-        self.resnet = resnet18()
+        self.resnet = resnet34()
         self.decoder = Decoder(self.out_channels)
 
     def forward(self, x):

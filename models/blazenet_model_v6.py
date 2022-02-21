@@ -95,11 +95,11 @@ class OutConv(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, out_channels):
         super(Decoder, self).__init__()
-        self.conv6 = UpConv(in_channels=512, out_channels=32)
-        self.conv7 = UpConv(in_channels=288, out_channels=32)
-        self.conv8 = UpConv(in_channels=160, out_channels=32)
-        self.conv9 = UpConv(in_channels=96, out_channels=32)
-        self.conv10 = OutConv(in_channels=32, out_channels=out_channels)
+        self.conv6 = UpConv(in_channels=512, out_channels=out_channels)
+        self.conv7 = UpConv(in_channels=277, out_channels=out_channels)
+        self.conv8 = UpConv(in_channels=149, out_channels=out_channels)
+        self.conv9 = UpConv(in_channels=85, out_channels=out_channels)
+        self.conv10 = OutConv(in_channels=21, out_channels=out_channels)
 
     def forward(self, out2, out3, out4, out5):
         out6 = self.conv6(out5)
