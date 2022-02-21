@@ -59,7 +59,6 @@ class Regressor3d(nn.Module):
         self.conv13 = DownConv(160, 64)
         self.conv14 = DownConv(320, 192)
         self.conv15 = DownConv(704, 210)
-        self.conv16 = BasicBlock(210, 210)
 
         # gcn
         self.gconv17 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
@@ -77,11 +76,10 @@ class Regressor3d(nn.Module):
         out13 = self.conv13(torch.cat([out12, out3], dim=1))
         out14 = self.conv14(torch.cat([out13, out4], dim=1))
         out15 = self.conv15(torch.cat([out14, out5], dim=1))
-        out16 = self.conv16(out15)
 
-        feat = out16.view(B, self.out_channels, -1)
+        out16 = out15.view(B, self.out_channels, -1)
 
-        out17 = self.gconv17(feat)
+        out17 = self.gconv17(out16)
         out18 = self.gconv18(out17)
         out19 = self.gconv19(out18)
         out20 = self.gconv20(out19)
