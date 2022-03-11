@@ -53,6 +53,7 @@ def train(config_file):
     model = Model(config)
     model = model.to(config["training_details"]["device"])
     if config["model"]["model_file"] != "":
+        print("Loading:", config["model"]["model_file"])
         model.load_state_dict(
             torch.load(
                 config["model"]["model_file"],
