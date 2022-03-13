@@ -7,7 +7,7 @@ from models.resnet import BasicBlock
 
 class DownConv(nn.Module):
     def __init__(
-        self, in_channels, out_channels, kernel_size=5, stride=1, padding=2,
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
     ):
         super(DownConv, self).__init__()
         self._conv1 = ConvBn(
@@ -27,14 +27,14 @@ class Regressor3d(nn.Module):
         self.out_channels = config["model"]["n_keypoints"]
         self.conv13 = DownConv(64, 32)
         self.conv14 = BasicBlock(160, 160)
-        self.conv15 = DownConv(160, 64)
-        self.conv16 = BasicBlock(320, 320)
-        self.conv17 = DownConv(320, 192)
-        self.conv18 = BasicBlock(704, 704)
-        self.conv19 = DownConv(704, 192)
+        self.conv15 = DownConv(160, 128)
+        self.conv16 = BasicBlock(384, 384)
+        self.conv17 = DownConv(384, 256)
+        self.conv18 = BasicBlock(768, 768)
+        self.conv19 = DownConv(768, 256)
 
         self.flat = nn.Flatten()
-        self.fc = nn.Linear(3072, self.out_channels * 3)
+        self.fc = nn.Linear(4096, self.out_channels * 3)
 
     def forward(self, out2, out3, out4, out5):
         out13 = self.conv13(out2)

@@ -25,12 +25,12 @@ class Regressor3d(nn.Module):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
         self.conv12 = DownConv(64, 32)
-        self.conv13 = DownConv(160, 64)
-        self.conv14 = DownConv(320, 192)
-        self.conv15 = DownConv(704, 192)
+        self.conv13 = DownConv(160, 128)
+        self.conv14 = DownConv(384, 256)
+        self.conv15 = DownConv(768, 256)
 
         self.flat = nn.Flatten()
-        self.fc = nn.Linear(3072, self.out_channels * 3)
+        self.fc = nn.Linear(4096, self.out_channels * 3)
 
     def forward(self, out2, out3, out4, out5):
         out12 = self.conv12(out2)

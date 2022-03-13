@@ -56,12 +56,12 @@ class Regressor3d(nn.Module):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
         self.conv12 = DownConv(64, 32)
-        self.conv13 = DownConv(160, 64)
-        self.conv14 = DownConv(320, 192)
-        self.conv15 = DownConv(704, 210)
+        self.conv13 = DownConv(160, 128)
+        self.conv14 = DownConv(384, 256)
+        self.conv15 = DownConv(768, 273)
 
         # gcn
-        self.gconv17 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
+        self.gconv17 = _GraphConv(HAND_ADJ, 208, 128, p_dropout=0.0)
         self.gconv18 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
         self.gconv19 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
