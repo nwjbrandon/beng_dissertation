@@ -2,7 +2,6 @@ import torch
 from torch import nn
 
 from models.blazenet_model_v5 import ConvBn, Pose2dModel
-from models.resnet import BasicBlock
 from models.semgcn import SemGraphConv, _GraphConv, _ResGraphConv, adj_mx_from_edges
 
 N_JOINTS = 21

@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from models.blazenet_model_v5 import ConvBn, Pose2dModel
+from models.blazenet_model_v5 import Conv, ConvBn, Pose2dModel
 from models.non_local import NLBlockND
 
 
