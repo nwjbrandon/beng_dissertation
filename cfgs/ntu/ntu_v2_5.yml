@@ -1,4 +1,4 @@
-description: "blazenet model for pose 3d estimation residual blocks on freihand"
+description: "blazenet model for pose 3d estimation on freihand"
 dataset:
   images_dir: data/synthetic_train_val/images
   camera_param_file: ./data/synthetic_train_val/3D_labels/camPosition.txt
@@ -27,7 +27,7 @@ training_details:
   is_freeze_pose2d: True
   bg_imgs_dir: data/bg_imgs
 model:
-  model_name: models.blazenet_model_3d_v1_1.Pose3dModel
+  model_name: models.blazenet_model_3d_v2_5.Pose3dModel
   model_file: ""
   n_keypoints: 21
   raw_image_size: 256

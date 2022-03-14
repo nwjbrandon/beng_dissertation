@@ -10,7 +10,7 @@ dataset:
   test_size: 0.1
 training_details:
   trainer: trainers.blazenet3d_trainer.Pose3DTrainer
-  epochs: 30
+  epochs: 15
   batch_size: 32
   optimizer: torch.optim.Adam
   learning_rate: 0.001
@@ -33,7 +33,7 @@ model:
   raw_image_size: 256
   model_img_size: 128
 test:
-  test_class: datasets.freihand.test_dataset.TestDataset
+  test_class: datasets.ntu.test_dataset.TestDataset
   model_file: exp/model_1.pth
   device: cpu
-  dataset_name: freihand
+  dataset_name: ntu
