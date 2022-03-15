@@ -31,14 +31,12 @@ class Regressor3d(nn.Module):
         self.conv15 = DownConv(160, 64)
         self.conv16 = BasicBlock(320, 320)
         self.conv17 = DownConv(320, 192)
-        self.conv18 = BasicBlock(704, 704)
-        self.conv19 = DownConv(704, 192)
-
-        self.conv20 = NLBlockND(in_channels=192, mode="gaussian", dimension=2, bn_layer=True)
-        self.conv21 = Conv(192, 210, 3, 1, 1)
+        self.conv18 = NLBlockND(in_channels=704, mode="gaussian", dimension=2, bn_layer=True)
+        self.conv19 = BasicBlock(704, 704)
+        self.conv20 = DownConv(704, 192)
 
         self.flat = nn.Flatten()
-        self.fc = nn.Linear(3360, self.out_channels * 3)
+        self.fc = nn.Linear(3072, self.out_channels * 3)
 
     def forward(self, out2, out3, out4, out5):
         out13 = self.conv13(out2)
@@ -48,11 +46,9 @@ class Regressor3d(nn.Module):
         out17 = self.conv17(out16)
         out18 = self.conv18(torch.cat([out17, out5], dim=1))
         out19 = self.conv19(out18)
-
         out20 = self.conv20(out19)
-        out21 = self.conv21(out20)
 
-        x = self.flat(out21)
+        x = self.flat(out20)
         kpt_3d = self.fc(x)
 
         # reshape
