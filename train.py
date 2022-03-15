@@ -77,6 +77,8 @@ def test(config_file, mode):
         test_dataset.check()
     elif mode == "validate":
         test_dataset.validate()
+    elif mode == "evaluate":
+        test_dataset.evaluate()
     else:
         print("Not supported")
 
