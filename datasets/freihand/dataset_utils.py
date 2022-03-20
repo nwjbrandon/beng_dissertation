@@ -269,12 +269,15 @@ class HandPoseDataset(Dataset):
         kpt_2d_gt[:, 1] = kpt_2d_gt[:, 1] / im_height
         kpt_3d_gt = local_pose3d_gt - local_pose3d_gt[9]
 
+        kpt_all = np.hstack([kpt_2d_gt, kpt_3d_gt])
+
         return {
             "image_name": image_name,
             "image_inp": image_inp,  # img to 2d
             "heatmaps_gt": heatmaps_gt,  # img to 2d
             "kpt_2d_gt": kpt_2d_gt,  # 2d to 3d
             "kpt_3d_gt": kpt_3d_gt,  # 2d to 3d
+            "kpt_all": kpt_all,
             "drot": drot,
             "dx": dx,
             "dy": dy,
