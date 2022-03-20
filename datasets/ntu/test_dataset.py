@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import torch
 from PIL import Image, ImageEnhance, ImageOps
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from datasets.ntu.data_utils import (
     draw_2d_skeleton,
@@ -17,6 +20,61 @@ from utils.io import import_module
 class TestDataset:
     def __init__(self, config):
         self.config = config
+
+    def evaluate(self):
+        Dataset = import_module(self.config["dataset"]["dataset_name"])
+        test_dataset = Dataset(config=self.config, set_type="test")
+        test_dataloader = DataLoader(test_dataset, 1, num_workers=0,)
+
+        Model = import_module(self.config["model"]["model_name"])
+        model = Model(self.config)
+        model = model.to(self.config["test"]["device"])
+        assert self.config["test"]["model_file"] != ""
+        model.load_state_dict(
+            torch.load(
+                self.config["test"]["model_file"],
+                map_location=torch.device(self.config["test"]["device"]),
+            )
+        )
+        model.eval()
+
+        gt_3d = []
+        pred_3d = []
+
+        with torch.no_grad():
+            for i, data in enumerate(tqdm(test_dataloader), 0):
+                image_inp = data["image_inp"]
+                heatmaps_gt = data["heatmaps_gt"]
+                kpt_3d_gt = data["kpt_3d_gt"]
+                image_inp = image_inp.to(torch.device(self.config["test"]["device"]))
+                heatmaps_gt = heatmaps_gt.to(torch.device(self.config["test"]["device"]))
+                kpt_3d_gt = kpt_3d_gt.to(torch.device(self.config["test"]["device"]))
+
+                pred = model(image_inp)
+                kpt_3d_pred = pred[1].cpu().numpy()[0]
+                kpt_3d_gt = kpt_3d_gt.cpu().numpy()[0]
+
+                gt_3d.append(kpt_3d_gt)
+                pred_3d.append(kpt_3d_pred)
+
+        gt_3d = np.array(gt_3d)
+        pred_3d = np.array(pred_3d)
+
+        pjpe_3d = np.linalg.norm(pred_3d - gt_3d, axis=2) * 1000
+        pck5_3d = pjpe_3d < 5
+        pck15_3d = pjpe_3d < 15
+
+        mpjpe_3d = np.mean(pjpe_3d, axis=0)
+        mpjpe_3d = np.concatenate([mpjpe_3d, [np.mean(mpjpe_3d)]])
+
+        mpck5_3d = np.mean(pck5_3d, axis=0)
+        mpck5_3d = np.concatenate([mpck5_3d, [np.mean(mpck5_3d)]])
+
+        mpck15_3d = np.mean(pck15_3d, axis=0)
+        mpck15_3d = np.concatenate([mpck15_3d, [np.mean(mpck15_3d)]])
+
+        df = pd.DataFrame({"mpjpe": mpjpe_3d, "pck@5mm": mpck5_3d, "pck@15mm": mpck15_3d})
+        print(df.head(22))
 
     def validate(self):
         Dataset = import_module(self.config["dataset"]["dataset_name"])

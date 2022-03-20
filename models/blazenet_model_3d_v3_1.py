@@ -54,8 +54,7 @@ class Regressor3d(nn.Module):
     def __init__(self, config):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
-        self.conv11 = DownConv(21, 21)
-        self.conv12 = DownConv(85, 32)
+        self.conv12 = DownConv(64, 32)
         self.conv13 = DownConv(160, 64)
         self.conv14 = DownConv(320, 192)
         self.conv15 = DownConv(704, 210)
@@ -80,11 +79,10 @@ class Regressor3d(nn.Module):
         )
         self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
 
-    def forward(self, heatmaps, out2, out3, out4, out5):
-        B, _, _, _ = heatmaps.shape
+    def forward(self, out2, out3, out4, out5):
+        B = out2.shape[0]
 
-        out11 = self.conv11(heatmaps)
-        out12 = self.conv12(torch.cat([out11, out2], dim=1))
+        out12 = self.conv12(out2)
         out13 = self.conv13(torch.cat([out12, out3], dim=1))
         out14 = self.conv14(torch.cat([out13, out4], dim=1))
         out15 = self.conv15(torch.cat([out14, out5], dim=1))
@@ -112,5 +110,5 @@ class Pose3dModel(nn.Module):
 
     def forward(self, x):
         heatmaps, out2, out3, out4, out5 = self.pose_2d(x)
-        kpt_3d = self.pose_3d(heatmaps, out2, out3, out4, out5)
+        kpt_3d = self.pose_3d(out2, out3, out4, out5)
         return heatmaps, kpt_3d

@@ -2,7 +2,7 @@ import argparse
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import ConcatDataset, DataLoader
 
 from utils.io import import_module, load_config
 
@@ -20,17 +20,30 @@ def train(config_file):
     config = load_config(config_file)
     print(config)
 
-    Dataset = import_module(config["dataset"]["dataset_name"])
-    train_dataset = Dataset(config=config, set_type="train")
+    train_datasets = []
+    val_datasets = []
+
+    for dataset in config["dataset"]:
+        dataset_config = config.copy()
+        dataset_config["dataset"] = config["dataset"][dataset]
+        Dataset = import_module(dataset_config["dataset"]["dataset_name"])
+
+        train_dataset = Dataset(config=dataset_config, set_type="train")
+        train_datasets.append(train_dataset)
+
+        val_dataset = Dataset(config=dataset_config, set_type="val")
+        val_datasets.append(val_dataset)
+
+    train_datasets = ConcatDataset(train_datasets)
+    val_datasets = ConcatDataset(val_datasets)
+
     train_dataloader = DataLoader(
-        train_dataset,
+        train_datasets,
         config["training_details"]["batch_size"],
         num_workers=config["training_details"]["num_workers"],
     )
-
-    val_dataset = Dataset(config=config, set_type="val")
     val_dataloader = DataLoader(
-        val_dataset,
+        val_datasets,
         config["training_details"]["batch_size"],
         shuffle=config["training_details"]["shuffle"],
         num_workers=config["training_details"]["num_workers"],
@@ -65,6 +78,8 @@ def train(config_file):
 
 def test(config_file, mode):
     config = load_config(config_file)
+    dataset_name = config["test"]["dataset_name"]
+    config["dataset"] = config["dataset"][dataset_name]
     print(config)
     TestDataset = import_module(config["test"]["test_class"])
     test_dataset = TestDataset(config)
@@ -77,8 +92,6 @@ def test(config_file, mode):
         test_dataset.check()
     elif mode == "validate":
         test_dataset.validate()
-    elif mode == "evaluate":
-        test_dataset.evaluate()
     else:
         print("Not supported")
 

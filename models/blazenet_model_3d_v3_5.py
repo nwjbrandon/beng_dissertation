@@ -54,14 +54,13 @@ class Regressor3d(nn.Module):
     def __init__(self, config):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
-        self.conv11 = DownConv(21, 21)
-        self.conv12 = DownConv(85, 32)
-        self.conv13 = DownConv(160, 64)
-        self.conv14 = DownConv(320, 192)
-        self.conv15 = DownConv(704, 210)
+        self.conv12 = DownConv(64, 21)
+        self.conv13 = DownConv(149, 42)
+        self.conv14 = DownConv(298, 63)
+        self.conv15 = DownConv(575, 63)
 
         # gcn
-        self.gconv17 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
+        self.gconv17 = _GraphConv(HAND_ADJ, 48, 128, p_dropout=0.0)
         self.gconv18 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
         self.gconv19 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
@@ -78,13 +77,20 @@ class Regressor3d(nn.Module):
         self.gconv25 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
         )
+        self.gconv26 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv27 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
+        self.gconv28 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
+        self.gconv29 = NLBlockND(
+            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
+        )
         self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
 
-    def forward(self, heatmaps, out2, out3, out4, out5):
-        B, _, _, _ = heatmaps.shape
+    def forward(self, out2, out3, out4, out5):
+        B = out2.shape[0]
 
-        out11 = self.conv11(heatmaps)
-        out12 = self.conv12(torch.cat([out11, out2], dim=1))
+        out12 = self.conv12(out2)
         out13 = self.conv13(torch.cat([out12, out3], dim=1))
         out14 = self.conv14(torch.cat([out13, out4], dim=1))
         out15 = self.conv15(torch.cat([out14, out5], dim=1))
@@ -100,7 +106,12 @@ class Regressor3d(nn.Module):
         out23 = self.gconv23(out22)
         out24 = self.gconv24(out23)
         out25 = self.gconv25(out24)
-        kpt_3d = self.gconvout(out25)
+        out26 = self.gconv26(out25)
+        out27 = self.gconv27(out26)
+        out28 = self.gconv28(out27)
+        out29 = self.gconv29(out28)
+
+        kpt_3d = self.gconvout(out29)
         return kpt_3d
 
 
@@ -112,5 +123,5 @@ class Pose3dModel(nn.Module):
 
     def forward(self, x):
         heatmaps, out2, out3, out4, out5 = self.pose_2d(x)
-        kpt_3d = self.pose_3d(heatmaps, out2, out3, out4, out5)
+        kpt_3d = self.pose_3d(out2, out3, out4, out5)
         return heatmaps, kpt_3d
