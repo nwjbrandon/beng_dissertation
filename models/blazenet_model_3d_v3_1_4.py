@@ -40,20 +40,12 @@ class DownConv(nn.Module):
     ):
         super(DownConv, self).__init__()
         self._conv1 = ConvBn(
-            in_channels, out_channels // 2, kernel_size=kernel_size, stride=stride, padding=padding,
-        )
-        self._conv2 = ConvBn(
-            out_channels // 2,
-            out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
+            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
         )
         self._maxpool2 = nn.MaxPool2d(2, 2)
 
     def forward(self, x):
         x = self._conv1(x)
-        x = self._conv2(x)
         x = self._maxpool2(x)
         return x
 
@@ -85,7 +77,7 @@ class Regressor3d(nn.Module):
         self.gconv25 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
         )
-        self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
+        self.gconvout = SemGraphConv(128, 5, HAND_ADJ)
 
     def forward(self, out2, out3, out4, out5):
         B = out2.shape[0]

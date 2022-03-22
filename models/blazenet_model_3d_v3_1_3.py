@@ -3,7 +3,6 @@ from torch import nn
 
 from models.blazenet_model_v5 import ConvBn, Pose2dModel
 from models.non_local import NLBlockND
-from models.resnet import BasicBlock
 from models.semgcn import SemGraphConv, _GraphConv, _ResGraphConv, adj_mx_from_edges
 
 N_JOINTS = 21
@@ -41,12 +40,20 @@ class DownConv(nn.Module):
     ):
         super(DownConv, self).__init__()
         self._conv1 = ConvBn(
-            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
+            in_channels, out_channels // 2, kernel_size=kernel_size, stride=stride, padding=padding,
+        )
+        self._conv2 = ConvBn(
+            out_channels // 2,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
         )
         self._maxpool2 = nn.MaxPool2d(2, 2)
 
     def forward(self, x):
         x = self._conv1(x)
+        x = self._conv2(x)
         x = self._maxpool2(x)
         return x
 
@@ -59,7 +66,6 @@ class Regressor3d(nn.Module):
         self.conv13 = DownConv(160, 64)
         self.conv14 = DownConv(320, 192)
         self.conv15 = DownConv(704, 210)
-        self.conv16 = BasicBlock(210, 210)
 
         # gcn
         self.gconv17 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
@@ -88,9 +94,8 @@ class Regressor3d(nn.Module):
         out13 = self.conv13(torch.cat([out12, out3], dim=1))
         out14 = self.conv14(torch.cat([out13, out4], dim=1))
         out15 = self.conv15(torch.cat([out14, out5], dim=1))
-        out16 = self.conv16(out15)
 
-        out16 = out16.view(B, self.out_channels, -1)
+        out16 = out15.view(B, self.out_channels, -1)
 
         out17 = self.gconv17(out16)
         out18 = self.gconv18(out17)
