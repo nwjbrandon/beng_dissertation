@@ -1,11 +1,11 @@
 import torch
-
-kpt3d = torch.rand(2, 4, 3)
-
+B = 2
+kpt3d = torch.rand(B, 4, 3, requires_grad=True)
+print(kpt3d)
 joint1 = torch.tensor([0, 1, 0])
 joint2 = torch.tensor([1, 2, 3])
 bones = kpt3d[:, joint1, :] - kpt3d[:, joint2, :]
-
+print(bones)
 # print(kpt3d.shape)
 
 camera_instr = torch.tensor([

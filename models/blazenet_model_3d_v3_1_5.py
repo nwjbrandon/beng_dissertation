@@ -77,7 +77,7 @@ class Regressor3d(nn.Module):
         self.gconv25 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
         )
-        self.gconvout = SemGraphConv(128, 5, HAND_ADJ)
+        self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
 
     def forward(self, out2, out3, out4, out5):
         B = out2.shape[0]

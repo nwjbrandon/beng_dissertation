@@ -9,7 +9,7 @@ dataset:
   dataset_name: datasets.ntu.dataset_utils_v2.HandPoseDataset
   test_size: 0.1
 training_details:
-  trainer: trainers.blazenet3d_trainer_v2.Pose3DTrainer
+  trainer: trainers.blazenet3d_trainer_v3.Pose3DTrainer
   epochs: 15
   batch_size: 32
   optimizer: torch.optim.Adam
