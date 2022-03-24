@@ -21,6 +21,7 @@ class Pose3DTrainer:
         self.checkpoint_frequency = 1
         self.criterion1 = IoULoss()
         self.criterion2 = nn.MSELoss(reduction="mean")
+        self.criterion3 = nn.MSELoss(reduction="mean")
 
         if self.is_freeze_pose2d:
             for _, param in self.model.pose_2d.named_parameters():
@@ -103,5 +104,13 @@ class Pose3DTrainer:
         self.loss["val"].append(epoch_loss)
 
     def criterion(self, heatmaps_pred, heatmaps_gt, kpt_all_pred, kpt_all_gt):
-        loss2 = self.criterion2(kpt_all_pred, kpt_all_gt)
-        return loss2
+        kpt_2d_gt = kpt_all_gt[:,:,:2]
+        kpt_3d_gt = kpt_all_gt[:,:,2:]
+
+        kpt_2d_pred = kpt_all_pred[:,:,:2]
+        kpt_3d_pred = kpt_all_pred[:,:,2:]
+
+        loss2 = self.criterion2(kpt_2d_gt, kpt_2d_pred)
+        loss3 = self.criterion2(kpt_3d_gt, kpt_3d_pred)
+
+        return loss2 + loss3
