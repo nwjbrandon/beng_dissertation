@@ -36,7 +36,7 @@ HAND_ADJ = adj_mx_from_edges(N_JOINTS, HAND_EDGES, sparse=False)
 
 class DownConv(nn.Module):
     def __init__(
-        self, in_channels, out_channels, kernel_size=5, stride=1, padding=2,
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
     ):
         super(DownConv, self).__init__()
         self._conv1 = ConvBn(
@@ -55,12 +55,12 @@ class Regressor3d(nn.Module):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
         self.conv12 = DownConv(64, 32)
-        self.conv13 = DownConv(160, 128)
-        self.conv14 = DownConv(384, 256)
-        self.conv15 = DownConv(768, 273)
+        self.conv13 = DownConv(160, 64)
+        self.conv14 = DownConv(320, 192)
+        self.conv15 = DownConv(704, 210)
 
         # gcn
-        self.gconv17 = _GraphConv(HAND_ADJ, 208, 128, p_dropout=0.0)
+        self.gconv17 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
         self.gconv18 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
         self.gconv19 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
@@ -75,14 +75,6 @@ class Regressor3d(nn.Module):
         )
         self.gconv24 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
         self.gconv25 = NLBlockND(
-            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
-        )
-        self.gconv26 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv27 = NLBlockND(
-            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
-        )
-        self.gconv28 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv29 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
         )
         self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
@@ -106,13 +98,7 @@ class Regressor3d(nn.Module):
         out23 = self.gconv23(out22)
         out24 = self.gconv24(out23)
         out25 = self.gconv25(out24)
-
-        out26 = self.gconv26(out25)
-        out27 = self.gconv27(out26)
-        out28 = self.gconv28(out27)
-        out29 = self.gconv29(out28)
-
-        kpt_3d = self.gconvout(out29)
+        kpt_3d = self.gconvout(out25)
         return kpt_3d
 
 

@@ -36,7 +36,7 @@ HAND_ADJ = adj_mx_from_edges(N_JOINTS, HAND_EDGES, sparse=False)
 
 class DownConv(nn.Module):
     def __init__(
-        self, in_channels, out_channels, kernel_size=5, stride=1, padding=2,
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1,
     ):
         super(DownConv, self).__init__()
         self._conv1 = ConvBn(
@@ -55,27 +55,18 @@ class Regressor3d(nn.Module):
         super(Regressor3d, self).__init__()
         self.out_channels = config["model"]["n_keypoints"]
         self.conv12 = DownConv(64, 32)
-        self.conv13 = DownConv(160, 128)
-        self.conv14 = DownConv(384, 256)
-        self.conv15 = DownConv(768, 273)
-        self.conv16 = ConvBn(273, 336, 3, 1, 1)
+        self.conv13 = DownConv(160, 64)
+        self.conv14 = DownConv(320, 192)
+        self.conv15 = DownConv(704, 210)
 
         # gcn
-        self.gconv17 = _GraphConv(HAND_ADJ, 256, 128, p_dropout=0.0)
+        self.gconv17 = _GraphConv(HAND_ADJ, 160, 128, p_dropout=0.0)
         self.gconv18 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
         self.gconv19 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
         )
         self.gconv20 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
         self.gconv21 = NLBlockND(
-            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
-        )
-        self.gconv22 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv23 = NLBlockND(
-            in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
-        )
-        self.gconv24 = _ResGraphConv(HAND_ADJ, 128, 128, 64, p_dropout=0.0)
-        self.gconv25 = NLBlockND(
             in_channels=N_JOINTS, mode="concatenate", dimension=1, bn_layer=True
         )
         self.gconvout = SemGraphConv(128, 3, HAND_ADJ)
@@ -87,20 +78,15 @@ class Regressor3d(nn.Module):
         out13 = self.conv13(torch.cat([out12, out3], dim=1))
         out14 = self.conv14(torch.cat([out13, out4], dim=1))
         out15 = self.conv15(torch.cat([out14, out5], dim=1))
-        out16 = self.conv16(out15)
 
-        out16 = out16.view(B, self.out_channels, -1)
+        out16 = out15.view(B, self.out_channels, -1)
 
         out17 = self.gconv17(out16)
         out18 = self.gconv18(out17)
         out19 = self.gconv19(out18)
         out20 = self.gconv20(out19)
         out21 = self.gconv21(out20)
-        out22 = self.gconv22(out21)
-        out23 = self.gconv23(out22)
-        out24 = self.gconv24(out23)
-        out25 = self.gconv25(out24)
-        kpt_3d = self.gconvout(out25)
+        kpt_3d = self.gconvout(out21)
         return kpt_3d
 
 

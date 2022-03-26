@@ -9,7 +9,7 @@ dataset:
   dataset_name: datasets.ntu.dataset_utils_v2.HandPoseDataset
   test_size: 0.1
 training_details:
-  trainer: trainers.blazenet3d_trainer.Pose3DTrainer
+  trainer: trainers.blazenet3d_trainer_v3.Pose3DTrainer
   epochs: 15
   batch_size: 32
   optimizer: torch.optim.Adam
@@ -27,7 +27,7 @@ training_details:
   is_freeze_pose2d: True
   bg_imgs_dir: data/bg_imgs
 model:
-  model_name: models.blazenet_model_3d_v3_2_3.Pose3dModel
+  model_name: models.blazenet_model_3d_v3_1_6.Pose3dModel
   model_file: ""
   n_keypoints: 21
   raw_image_size: 256

@@ -26,16 +26,16 @@ params = get_num_params(model.pose_3d)
 image_inp = torch.rand(1, 3, 256, 256).to(config["model"]["device"])
 print(image_inp.shape)
 
-for i in range(10):
+for i in range(100):
     _ = model(image_inp)
 
 
 start_time = time.time()
-for _ in range(100):
+for _ in range(300):
     _ = model(image_inp)
 end_time = time.time()
 
 duration = end_time - start_time
 print("duration:", duration)
-print("fps:", 100 / duration)
+print("fps:", 300 / duration)
 print("params:", params)

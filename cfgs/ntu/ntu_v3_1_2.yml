@@ -27,7 +27,7 @@ training_details:
   is_freeze_pose2d: True
   bg_imgs_dir: data/bg_imgs
 model:
-  model_name: models.blazenet_model_3d_v3_2_1.Pose3dModel
+  model_name: models.blazenet_model_3d_v3_1_2.Pose3dModel
   model_file: ""
   n_keypoints: 21
   raw_image_size: 256
