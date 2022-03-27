@@ -2,6 +2,7 @@ data/synthetic_train_val/
 data/real_world_testset/
 data/freihand/
 data/ho3d/
+data/custom/
 .ipynb_checkpoints/
 __pycache__/
 weights/
@@ -11,3 +12,5 @@ exp/*.txt
 *.jpg
 *.json
 *.pth
+*.npy
+model_final
