@@ -1,0 +1,4 @@
+[flake8]
+ignore = D203
+exclude = .git,env,.pytest_cache,__pycache__,__init__.py
+max-complexity = 10
