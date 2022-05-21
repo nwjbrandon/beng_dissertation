@@ -1,0 +1,4 @@
+<launch>
+    <node name="niryo_robot" pkg="niryo_moveit" type="robot.py" args="--wait" output="screen" />
+    <include file="$(find niryo_moveit)/launch/part_3.launch" />
+</launch>
