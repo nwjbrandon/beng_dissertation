@@ -1,0 +1,12 @@
+\section{Introduction}
+
+\noindent
+Human body and hand pose estimation plays an important role in gesture control. This task is challenging because multiple poses can be mapped to the same pose on the image. Besides, when the joints are occluded, it is difficult to reasonably estimate the pose \cite{poseestimationreview}. Pose estimation to remotely control a robotic arm via gestures is useful in operating tasks that are dangerous and physically demanding. Although Virtual Reality and Haptic Devices are commonly used, they are expensive and inconvenient for personal use \cite{shadowrobot, teleexistence}.
+
+\noindent
+To make the remote control of the robotic arm more accessible, pose estimations on the upper body and hand are investigated as an alternative approach. Pose estimation is performed on RGB images to extract 3D poses on the upper body and hand. The upper body pose is used to control the position of the robotic arm's gripper, while the lower body pose is used to control the orientation of the gripper and the gripper size. The gripper is the robot's end effector.
+
+\section{Contributions}
+
+\noindent
+In this project, a new approach to control the robotic arm via gestures from pose estimation on RGB images is explored and demonstrated on a simulated and physical robot. Pose estimation models for the hand are designed with reference to related works, trained from scratch, and fine-tuned to become suitable for real-time inference. The same pose estimation model for the upper body is also trained using a dataset that was self-collected.

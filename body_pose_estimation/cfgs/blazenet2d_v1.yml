@@ -1,0 +1,35 @@
+description: "blazenet model for pose 3d estimation residual blocks"
+dataset:
+  data_dir: data/custom
+  dataset_name: datasets.dataset_utils.BodyPoseDataset
+  img_path: data/custom/exp1/bottom_wipe/frame_150.jpg
+  pose2d_path: data/custom/exp1/bottom_wipe/pose2d_150.npy
+  pose3d_path: data/custom/exp1/bottom_wipe/pose3d_150.npy
+training_details:
+  trainer: trainers.blazenet_trainer.Pose2DTrainer
+  epochs: 30
+  batch_size: 32
+  optimizer: torch.optim.Adam
+  learning_rate: 0.001
+  num_workers: 8
+  shuffle: True
+  scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau
+  scheduler_factor: 0.5
+  scheduler_patience: 5
+  scheduler_verbose: True
+  scheduler_threshold: 0.0001
+  device: cuda
+  loss_file: exp/loss_info.txt
+  model_file: exp/model
+  is_freeze_pose2d: False
+  bg_imgs_dir: data/bg_imgs
+model:
+  model_name: models.blazenet_model.Pose2dModel
+  model_file: ""
+  n_keypoints: 8
+  raw_image_size: 256
+  model_img_size: 128
+test:
+  test_class: datasets.test_dataset.TestDataset
+  model_file: exp/model_1.pth
+  device: cpu

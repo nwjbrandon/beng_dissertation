@@ -1,0 +1,5 @@
+moveit_msgs/RobotTrajectory trajectory
+---
+bool is_done
+---
+uint32 waypoint_idx

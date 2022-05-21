@@ -1,0 +1,12 @@
+\section{Conclusion}
+\noindent
+This project successfully designed and trained 3D pose estimation from scratch for the upper body pose and hand pose. This project also demonstrated the use of hand pose estimation model to control the orientation of the end effector. However, the body pose estimation model was still not robust enough to control the position of the end effector. Instead of the body pose estimation model, hand object detection model was used as an alternative.
+
+\noindent
+One limitation of the pose estimation models in this project is that it works on 1 hand or 1 upper body in the image. This allows the model to be lightweights and is sufficient for the scope of this project. Another limitation of the models is that the model cannot perform well under high occlusion, such as the hand is perpendicular to the image plane. The 3d hand pose will appear compact and squashed.
+
+\noindent
+There are room for improvements for this lightweight models. One improvements is to perform model distillation where a large image encoder such as ResNet50 is used to extract image features and a small image encoder such as ResNet18 learns the encoded embeddings. The number of channels in the ResNet architecture can also be reduced. Since the model trained on synthetic hand dataset can generalize to the real data, the same method can be used for the body pose estimation to reduce the need for manual annotation.
+
+\noindent
+This project shows that 3D pose estimation to teleoperate the robotic arm is feasible to some extent. However, there might be easier ways to control the robotic arm, such as using object detection instead of body pose estimation. As a note for future developments, a mobile phone can be used instead. Most mobile phone has IMU sensors that can give accurate position and orientation. However, the camera can be used to determine the finger pose instead to grasp the object to reduce the need for complicated hardware. The phone can vibrate to provide some form of tactile feedback. This reduce the device needed to only the mobile phone for the setup.

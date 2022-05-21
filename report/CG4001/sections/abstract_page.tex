@@ -1,0 +1,14 @@
+\begin{center}
+    \large{\textbf{Abstract}}    
+\end{center}
+\noindent
+This project explored an alternative approach to control the robotic arm remotely via gestures from 3D pose estimation on RGB images. 3D pose estimations were performed on the upper body and the hand to control the position and orientation of the end effector respectively.
+
+\noindent
+The 3D pose estimation models were designed and trained from scratch. A Resnet encoder-decoder architecture was trained on 2D poses. The encoder serves as an image embedding. A 3D pose module fuses the features in the image embedding from the encoder before passing to a stack of graph convolution layers and nonlocal layers to estimate the 3D poses.  
+
+\noindent
+The 3D pose estimation models were trained on open-sourced synthetic hand dataset and real hand dataset. The synthetic dataset generalised well on real data. Upper body pose dataset was self-collected. The same model was trained and evaluated on the self-collected dataset. Hyperparameters were experimented, including different loss functions, to achieve better performance.
+
+\noindent
+The 3D pose estimator models were integrated with a simulated and physical robotic arm to demonstrate the teleoperation. The robotic arm could teleoperate to some extent. A pick-and-place was performed to demonstrate the teleoperation.

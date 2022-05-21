@@ -1,0 +1,7 @@
+train: ../datasets/hand/images/train/
+val: ../datasets/hand/images/val/
+test: ../datasets/hand/images/test/
+
+# Classes
+nc: 1  # number of classes
+names: ['hand']  # class names

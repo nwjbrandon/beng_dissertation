@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="firefighter">
+  <xacro:property name="width" value=".2" />
+  <link name="world" />
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <!--- 0.0 0 -0.04  1.5708 3.14159-->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint1.dae" />
+      </geometry>
+      <origin xyz="0.0 0 0 " rpy=" 0 0 -1.5708" />
+    </visual>
+    <collision>
+      <geometry>
+        <!--- 0.0 0 -0.04  1.5708 3.14159-->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint1.dae" />
+      </geometry>
+      <origin xyz="0.0 0 0 " rpy=" 0 0 -1.5708" />
+    </collision>
+    <inertial>
+      <mass value="0.35" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+    </inertial>
+  </link>
+  <link name="shoulder_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/mycobot/joint2.dae" />
+      </geometry>
+      <origin xyz="0.0 0 -0.06096 " rpy=" 0 0 -1.5708" />
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/mycobot/joint2.dae" />
+      </geometry>
+      <origin xyz="0.0 0 -0.06096 " rpy=" 0 0 -1.5708" />
+    </collision>
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+    </inertial>
+  </link>
+  <link name="arm_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/mycobot/joint3.dae" />
+      </geometry>
+      <origin xyz="0.0 0 0.03256 " rpy=" 0 -1.5708 0" />
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/mycobot/joint3.dae" />
+      </geometry>
+      <origin xyz="0.0 0 0.03256 " rpy=" 0 -1.5708 0" />
+    </collision>
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+    </inertial>
+  </link>
+  <link name="elbow_link">
+    <visual>
+      <geometry>
+        <!--- 0.0 0 -0.04 -->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint4.dae" />
+      </geometry>
+      <origin xyz="0.0 0 0.03056 " rpy=" 0 -1.5708 0" />
+    </visual>
+    <collision>
+      <geometry>
+        <!--- 0.0 0 -0.04 -->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint4.dae" />
+      </geometry>
+      <origin xyz="0.0 0 0.03056 " rpy=" 0 -1.5708 0" />
+    </collision>
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+    </inertial>
+  </link>
+  <link name="forearm_link">
+    <visual>
+      <geometry>
+        <!--- 0.0 0 -0.04 -->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint5.dae" />
+      </geometry>
+      <origin xyz="0.0 0 -0.03356 " rpy=" -1.5708 0 0" />
+    </visual>
+    <collision>
+      <geometry>
+        <!--- 0.0 0 -0.04 -->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint5.dae" />
+      </geometry>
+      <origin xyz="0.0 0 -0.03356 " rpy=" -1.5708 0 0" />
+    </collision>
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+    </inertial>
+  </link>
+  <link name="wrist_link">
+    <visual>
+      <geometry>
+        <!--- 0.0 0 -0.04 -->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint6.dae" />
+      </geometry>
+      <origin xyz="0 0.00 -0.038 " rpy=" 0 0 0" />
+    </visual>
+    <collision>
+      <geometry>
+        <!--- 0.0 0 -0.04 -->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint6.dae" />
+      </geometry>
+      <origin xyz="0 0.00 -0.038 " rpy=" 0 0 0" />
+    </collision>
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+    </inertial>
+  </link>
+  <link name="hand_link">
+    <visual>
+      <geometry>
+        <!--- 0.0 0 -0.04 -->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint7.dae" />
+      </geometry>
+      <origin xyz="0.0 0 -0.012 " rpy=" 0 0 0" />
+    </visual>
+    <collision>
+      <geometry>
+        <!--- 0.0 0 -0.04 -->
+        <mesh filename="package://niryo_one_urdf/mycobot/joint7.dae" />
+      </geometry>
+      <origin xyz="0.0 0 -0.012 " rpy=" 0 0 0" />
+    </collision>
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+    </inertial>
+  </link>
+  <link name="tool_link" />
+  <link name="gripper_base">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_MainSupport.STL" scale=".001 .001 .001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_MainSupport.STL" scale=".001 .001 .001" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="servo_head">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_ServoHead.STL" scale=".001 .001 .001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_ServoHead.STL" scale=".001 .001 .001" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="control_rod_right">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_Rod.STL" scale=".001 .001 .001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_Rod.STL" scale=".001 .001 .001" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="control_rod_left">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_Rod.STL" scale=".001 .001 .001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_Rod.STL" scale=".001 .001 .001" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="right_gripper">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_ClampRight.STL" scale=".001 .001 .001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_ClampRight.STL" scale=".001 .001 .001" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_gripper">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_ClampLeft.STL" scale=".001 .001 .001" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <geometry>
+        <mesh filename="package://niryo_one_urdf/Gripper1/G1_ClampLeft.STL" scale=".001 .001 .001" />
+      </geometry>
+    </collision>
+  </link>
+  <!--Disable_Collisions -->
+  <!-- <disable_collision link1="right_gripper" link2="gripper_base" />
+  <disable_collision link1="left_gripper" link2="gripper_base" />
+  <disable_collision link1="control_rod_right" link2="hand_link" />
+  <disable_collision link1="control_rod_left" link2="hand_link" />
+  <disable_collision link1="gripper_base" link2="wrist_link" /> -->
+  <joint name="joint_world" type="fixed">
+    <parent link="world" />
+    <child link="base_link" />
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
+  </joint>
+  <joint name="joint_1" type="revolute">
+    <axis xyz="0 0 1" />
+    <limit effort="1" lower="-3.14" upper="3.14159" velocity="3.14" />
+    <parent link="base_link" />
+    <child link="shoulder_link" />
+    <origin xyz="0 0 0.13156" rpy="0 0 0" />
+  </joint>
+  <joint name="joint_2" type="revolute">
+    <axis xyz="0 0 1" />
+    <limit effort="1" lower="-3.14" upper="3.14159" velocity="3.14" />
+    <parent link="shoulder_link" />
+    <child link="arm_link" />
+    <origin xyz="0 0  0" rpy="0 1.5708 -1.5708" />
+  </joint>
+  <joint name="joint_3" type="revolute">
+    <axis xyz=" 0 0 1" />
+    <limit effort="1" lower="-3.14" upper="3.14159" velocity="3.14" />
+    <parent link="arm_link" />
+    <child link="elbow_link" />
+    <origin xyz="  -0.1104 0 0   " rpy="0 0 0" />
+  </joint>
+  <joint name="joint_4" type="revolute">
+    <axis xyz=" 0 0 1" />
+    <limit effort="1" lower="-3.14" upper="3.14159" velocity="3.14" />
+    <parent link="elbow_link" />
+    <child link="forearm_link" />
+    <origin xyz="-0.096 0 0.06462" rpy="0 0 -1.5708" />
+  </joint>
+  <joint name="joint_5" type="revolute">
+    <axis xyz="0 0 1" />
+    <limit effort="1" lower="-3.14" upper="3.14159" velocity="3.14" />
+    <parent link="forearm_link" />
+    <child link="wrist_link" />
+    <origin xyz="0 -0.07318 0" rpy="1.5708 -1.5708 0" />
+  </joint>
+  <joint name="joint_6" type="revolute">
+    <axis xyz="0 0 1" />
+    <limit effort="1" lower="-3.14" upper="3.14159" velocity="3.14" />
+    <parent link="wrist_link" />
+    <child link="hand_link" />
+    <origin xyz="0 0.0456 0" rpy="-1.5708 0 0" />
+  </joint>
+  <joint name="hand_tool_joint" type="fixed">
+    <parent link="hand_link" />
+    <child link="gripper_base" />
+    <origin xyz="0 0.01 0.0275" rpy="3.14159 0 0" />
+  </joint>
+  <joint name="end_effector" type="fixed">
+    <parent link="hand_link" />
+    <child link="tool_link" />
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+  </joint>
+  <joint name="servo_head_joint" type="fixed">
+    <parent link="gripper_base" />
+    <child link="servo_head" />
+    <origin rpy="0 0 0" xyz="0 0 0" />
+  </joint>
+  <joint name="control_rod_left" type="fixed">
+    <parent link="servo_head" />
+    <child link="control_rod_left" />
+    <origin rpy="0 0 0" xyz="0 0 0" />
+  </joint>
+  <joint name="control_rod_right" type="fixed">
+    <parent link="servo_head" />
+    <child link="control_rod_right" />
+    <origin rpy="0 3.141 0" xyz="0 0 0" />
+  </joint>
+  <joint name="gripper_joint_right" type="prismatic">
+    <parent link="control_rod_right" />
+    <child link="right_gripper" />
+    <origin rpy="0 3.141 0" xyz="0 0 0" />
+    <limit effort="1" lower="-0.0257436" upper="0.0257436" velocity="1.0" />
+    <mimic joint="gripper_joint_left" multiplier="-1" />
+  </joint>
+  <joint name="gripper_joint_left" type="prismatic">
+    <parent link="control_rod_left" />
+    <child link="left_gripper" />
+    <origin rpy="0 0 0" xyz="0 0 0" />
+    <limit effort="1" lower="-0.0257436" upper="0.0257436" velocity="1.0" />
+  </joint>
+</robot>

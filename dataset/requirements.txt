@@ -1,0 +1,8 @@
+black==19.10b0
+flake8==3.8.4
+isort==5.6.4
+open3d==0.14.1
+opencv-python==4.5.4.60
+numpy==1.19.5
+torch==1.10.0
+pyrealsense2==2.50.0.3812

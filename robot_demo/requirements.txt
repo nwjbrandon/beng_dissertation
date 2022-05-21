@@ -1,0 +1,5 @@
+boto3
+mediapipe
+opencv-python
+numpy
+transforms3d

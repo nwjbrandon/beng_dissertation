@@ -1,0 +1,3 @@
+<launch>
+    <node name="controller_gui" pkg="niryo_moveit" type="controller_gui.py" args="--wait" output="screen" />
+</launch>
